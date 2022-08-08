@@ -17,7 +17,7 @@ class Color(IntEnum):
 @dataclass
 class Person(J):
     name: str
-    remark: str = field(default="", metadata={"j": json_options(skip=False)})
+    remark: str = field(default="", metadata={"j": json_options(skip=True)})
     extras: JSON = field(default_factory=dict)
     registered_at: datetime = field(default_factory=lambda: datetime.fromtimestamp(0))
 
@@ -52,6 +52,7 @@ class Pencil(J):
     )
     creators: List[Person] = field(default_factory=list)
     cap: Optional[Cap] = None
+    score: int = field(default=0, metadata={"j": json_options(omitempty=True)})
 
 
 # Decode
