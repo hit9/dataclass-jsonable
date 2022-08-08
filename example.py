@@ -46,7 +46,8 @@ class Pencil(J):
         default=False,
         metadata={
             "j": json_options(
-                decoder=lambda x: x == "1", encoder=lambda x: "1" if x else "0"
+                decoder=lambda x: x == "1",
+                encoder=lambda x: "1" if x else "0",
             )
         },
     )
