@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import IntEnum
 from typing import List
 
-from dataclass_jsonable import J, json_options
+from dataclass_jsonable import JSON, J, json_options
 
 
 class Color(IntEnum):
@@ -17,8 +17,9 @@ class Color(IntEnum):
 @dataclass
 class Person(J):
     name: str
-    registered_at: datetime = field(default_factory=lambda: datetime.fromtimestamp(0))
     remark: str = field(default="", metadata={"j": json_options(skip=False)})
+    extras: JSON = field(default_factory=dict)
+    registered_at: datetime = field(default_factory=lambda: datetime.fromtimestamp(0))
 
 
 @dataclass
@@ -56,7 +57,7 @@ pencil: Pencil = Pencil.from_json(
         "create_time": "2022-08-08T18:54:24",
         "price": "10.5",
         "owner": {"name": "tom"},
-        "creators": [{"name": "jerry"}, {"name": "kevin"}],
+        "creators": [{"name": "jerry"}, {"name": "kevin", "extras": {"note": "abc"}}],
     }
 )
 

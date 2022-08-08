@@ -73,7 +73,7 @@ class JSONAble:
         You can override this function by declaring a subclass that extends `JSONAble`.
         """
         if t is None:
-            return lambda _: None
+            return _encode_None
         elif t is bool:
             return bool
         elif t is str:
@@ -85,22 +85,40 @@ class JSONAble:
         elif t is Decimal:
             return str
         elif t is datetime:
-            return lambda x: int(x.timestamp())
+            return _encode_datetime
         elif t is timedelta:
-            return lambda x: int(x.total_seconds())
+            return _encode_timedelta
         elif isinstance(t, type) and issubclass(t, Enum):
-            return lambda x: x.value
-        elif isinstance(t, type) and issubclass(t, JSONAble):  # Nested
-            return lambda x: x.json()
-        elif getattr(t, "__origin__", None) is list:  # List[E]
-            f = cls.get_encoder(t.__args__[0])  # type: ignore
+            return _encode_enum
+        elif t is Any:
+            # Any runs reflection encoding.
+            return lambda x: cls.get_encoder(type(x))(x)
+        elif isinstance(t, type) and issubclass(t, JSONAble):
+            # Nested
+            return _encode_jsonable
+        elif _is_generics(t) and _get_generics_origin(t) is list:
+            # List[E]
+            args = _get_generics_args(t)
+            f = cls.get_encoder(args[0])
             return lambda x: [f(e) for e in x]
-        elif getattr(t, "__origin__", None) is set:  # Set[E]
-            f = cls.get_encoder(t.__args__[0])  # type: ignore
+        elif _is_generics(t) and _get_generics_origin(t) is set:
+            # Set[E]
+            args = _get_generics_args(t)
+            f = cls.get_encoder(args[0])
             return lambda x: {f(e) for e in x}
-        elif getattr(t, "__origin__", None) is tuple:  # Tuple[E]
-            f = cls.get_encoder(t.__args__[0])  # type: ignore
+        elif _is_generics(t) and _get_generics_origin(t) is set:
+            # Tuple[E]
+            args = _get_generics_args(t)
+            f = cls.get_encoder(args[0])
             return lambda x: tuple(f(e) for e in x)
+        elif _is_generics(t) and _get_generics_origin(t) is dict:
+            # Dict[K, E]
+            args = _get_generics_args(t)
+            if args[0] is not str:
+                raise NotImplementedError("dict with non-str keys is not supported")
+            # Dict[str, E]
+            f = cls.get_encoder(args[1])
+            return lambda x: {str(k): f(v) for k, v in x.items()}
         raise NotImplementedError(f"get_encoder not support type {t}")
 
     @classmethod
@@ -111,7 +129,7 @@ class JSONAble:
         You can override this function by declaring a subclass that extends `JSONAble`.
         """
         if t is None:
-            return lambda _: None
+            return _decode_None
         elif t is bool:
             return bool
         elif t is str:
@@ -123,22 +141,40 @@ class JSONAble:
         elif t is Decimal:
             return Decimal
         elif t is datetime:
-            return lambda x: datetime.fromtimestamp(int(x))
+            return _decode_datetime
         elif t is timedelta:
-            return lambda x: timedelta(seconds=x)
+            return _decode_timedelta
+        elif t is Any:
+            # Any returns reflection decoding.
+            return lambda x: cls.get_decoder(type(x))(x)
         elif isinstance(t, type) and issubclass(t, Enum):
             return t
-        elif isinstance(t, type) and issubclass(t, JSONAble):  # Nested
+        elif isinstance(t, type) and issubclass(t, JSONAble):
+            # Nested
             return lambda x: t.from_json(x)
-        elif getattr(t, "__origin__", None) is list:  # List[E]
-            f = cls.get_decoder(t.__args__[0])  # type: ignore
+        elif _is_generics(t) and _get_generics_origin(t) is list:
+            # List[E]
+            args = _get_generics_args(t)
+            f = cls.get_decoder(args[0])
             return lambda x: [f(e) for e in x]
-        elif getattr(t, "__origin__", None) is set:  # Set[E]
-            f = cls.get_decoder(t.__args__[0])  # type: ignore
+        elif _is_generics(t) and _get_generics_origin(t) is set:
+            # Set[E]
+            args = _get_generics_args(t)
+            f = cls.get_decoder(args[0])
             return lambda x: {f(e) for e in x}
-        elif getattr(t, "__origin__", None) is tuple:  # Tuple[E]
-            f = cls.get_decoder(t.__args__[0])  # type: ignore
+        elif _is_generics(t) and _get_generics_origin(t) is set:
+            # Tuple[E]
+            args = _get_generics_args(t)
+            f = cls.get_decoder(args[0])
             return lambda x: tuple(f(e) for e in x)
+        elif _is_generics(t) and _get_generics_origin(t) is dict:
+            # Dict[K, E]
+            args = _get_generics_args(t)
+            if args[0] is not str:
+                raise NotImplementedError("dict with non-str keys is not supported")
+            # Dict[str, E]
+            f = cls.get_decoder(args[1])
+            return lambda x: {str(k): f(v) for k, v in x.items()}
         raise NotImplementedError(f"get_decoder not support type {t}")
 
     def json(self) -> JSON:
@@ -205,3 +241,27 @@ class JSONAble:
 
 
 J = JSONAble  # short alias
+
+
+# Makes some encoder/decoder function be static.
+
+_encode_datetime = lambda x: int(x.timestamp())
+_encode_timedelta = lambda x: int(x.total_seconds())
+_encode_enum = lambda x: x.value
+_encode_None = lambda _: None
+_encode_jsonable = lambda x: x.json()
+_decode_datetime = lambda x: datetime.fromtimestamp(int(x))
+_decode_timedelta = lambda x: timedelta(seconds=int(x))
+_decode_None = lambda _: None
+
+# Utils
+def _is_generics(t) -> bool:
+    return hasattr(t, "__origin__") and hasattr(t, "__args__")
+
+
+def _get_generics_origin(t):
+    return getattr(t, "__origin__", None)
+
+
+def _get_generics_args(t):
+    return getattr(t, "__args__", tuple())
