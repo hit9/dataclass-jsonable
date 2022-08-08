@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
 
@@ -119,6 +119,14 @@ class JSONAble:
             # Dict[str, E]
             f = cls.get_encoder(args[1])
             return lambda x: {str(k): f(v) for k, v in x.items()}
+        elif _is_generics(t) and _get_generics_origin(t) is Union:
+            # Union[A, B, C, D]
+            args = _get_generics_args(t)
+            if len(args) != 2 or args[1] is not type(None):
+                raise NotImplementedError("only Optional[X] union type is supported")
+            # Optional[E]
+            f = cls.get_encoder(args[0])
+            return lambda x: None if x is None else f(x)
         raise NotImplementedError(f"get_encoder not support type {t}")
 
     @classmethod
@@ -175,6 +183,14 @@ class JSONAble:
             # Dict[str, E]
             f = cls.get_decoder(args[1])
             return lambda x: {str(k): f(v) for k, v in x.items()}
+        elif _is_generics(t) and _get_generics_origin(t) is Union:
+            # Union[A, B, C, D]
+            args = _get_generics_args(t)
+            if len(args) != 2 or args[1] is not type(None):
+                raise NotImplementedError("only Optional[X] union type is supported")
+            # Optional[E]
+            f = cls.get_decoder(args[0])
+            return lambda x: None if x is None else f(x)
         raise NotImplementedError(f"get_decoder not support type {t}")
 
     def json(self) -> JSON:

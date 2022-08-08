@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import IntEnum
-from typing import List
+from typing import List, Optional
 
 from dataclass_jsonable import JSON, J, json_options
 
@@ -20,6 +20,11 @@ class Person(J):
     remark: str = field(default="", metadata={"j": json_options(skip=False)})
     extras: JSON = field(default_factory=dict)
     registered_at: datetime = field(default_factory=lambda: datetime.fromtimestamp(0))
+
+
+@dataclass
+class Cap(J):
+    color: Color
 
 
 @dataclass
@@ -46,6 +51,7 @@ class Pencil(J):
         },
     )
     creators: List[Person] = field(default_factory=list)
+    cap: Optional[Cap] = None
 
 
 # Decode
@@ -58,6 +64,7 @@ pencil: Pencil = Pencil.from_json(
         "price": "10.5",
         "owner": {"name": "tom"},
         "creators": [{"name": "jerry"}, {"name": "kevin", "extras": {"note": "abc"}}],
+        "cap": {"color": 2},
     }
 )
 
