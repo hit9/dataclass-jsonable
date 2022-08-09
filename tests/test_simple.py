@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import IntEnum
 from typing import List
 
-from dataclass_jsonable import J
+from dataclass_jsonable import J, json_options
 
 
 class PhoneType(IntEnum):
@@ -15,6 +16,16 @@ class PhoneType(IntEnum):
 class PhoneNumber(J):
     number: str
     type: PhoneType
+    created_at: datetime = field(
+        default_factory=datetime.now,
+        metadata={
+            "j": json_options(
+                name="create_time",
+                encoder=datetime.isoformat,
+                decoder=datetime.fromisoformat,
+            )
+        },
+    )
 
 
 @dataclass
@@ -37,7 +48,13 @@ def test_simple():
                 name="tom",
                 id=1,
                 email="tom@example.com",
-                phones=[PhoneNumber("18501111111", PhoneType.MOBILE)],
+                phones=[
+                    PhoneNumber(
+                        "18501111111",
+                        PhoneType.MOBILE,
+                        created_at=datetime(2022, 8, 9, 8, 0, 0),
+                    )
+                ],
             )
         ]
     )
@@ -51,7 +68,13 @@ def test_simple():
                 "name": "tom",
                 "id": 1,
                 "email": "tom@example.com",
-                "phones": [{"number": "18501111111", "type": 0}],
+                "phones": [
+                    {
+                        "number": "18501111111",
+                        "type": 0,
+                        "create_time": "2022-08-09T08:00:00",
+                    }
+                ],
             }
         ]
     }
