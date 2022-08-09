@@ -1,6 +1,5 @@
 """
-Simple, practical and overridable conversions between dataclasses
-and jsonable dictionaries.
+Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 Requires: Python >= 3.7
 
