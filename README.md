@@ -23,12 +23,15 @@ class Pen(J):
 class Box(J):
     pens: List[Pen]
 
-pen = Pen(
-    color=Color.BLUE,
-    price=Decimal("20.1"),
-    produced_at=datetime.now(),
+box = Box(
+    pens=[
+        Pen(
+            color=Color.BLUE,
+            price=Decimal("20.1"),
+            produced_at=datetime.now(),
+        )
+    ]
 )
-box = Box(pens=[pen])
 
 # Encode to jsonable dictionary.
 d = box.json()
