@@ -62,11 +62,17 @@ print(Box.from_json(d))
 
 ## Customization / Overriding Examples
 
-We can override the default conversion behaviors with `json_options`:
+We can override the default conversion behaviors with `json_options`.
+The following pseudo code gives the pattern:
 
 ```python
 from dataclasses import field
 from dataclass_jsonable import json_options
+
+@dataclass
+class Struct(J):
+    # We use the dataclass field's metadata for field-level customization purpose.
+    attr: T = field(metadata={"j": json_options(...)})
 ```
 
 Specific a custom dictionary key over the default field's name:
@@ -95,6 +101,7 @@ class Book(J):
     attr: Optional[str] = field(
         default=None,
         metadata={
+            # By default, we test `empty` using `not x`.
             "j": json_options(omitempty=True, omitempty_tester=lambda x: x is None)
         },
     )
@@ -108,9 +115,7 @@ Always skip a field, stop some "private" field from exporting:
 ```python
 @dataclass
 class Obj(J):
-    attr: str = field(
-        metadata={"j": json_options(skip=True)},
-    )
+    attr: str = field(metadata={"j": json_options(skip=True)})
 
 Obj(attr="private").json() # => {}
 ```
