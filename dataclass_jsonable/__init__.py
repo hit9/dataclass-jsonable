@@ -3,11 +3,12 @@ Simple, practical and overridable conversions between dataclasses
 and jsonable dictionaries.
 
 Requires: Python >= 3.7
+
 Supported type annotation X:
-    bool,int,float,str,Decimal,datetime,timedelta
-    Any
-    List[X],Tuple[X],Set[X],Dict[str, X]
-    Optional[X]
+
+    bool int float str Decimal datetime timedelta
+    Any Optional[X]
+    List[X] Tuple[X] Set[X] Dict[str, X]
     JSONAble (nested)
 """
 
