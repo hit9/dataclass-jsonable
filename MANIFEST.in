@@ -1,0 +1,18 @@
+include setup.py dataclass_jsonable dataclass_jsonable/py.typed
+recursive-include *.py
+recursive-include dataclass_jsonable *.py
+recursive-include dataclass_jsonable/* *.py
+global-exclude *.pyc
+global-exclude *.swp
+global-exclude *.swo
+global-exclude *.swn
+global-exclude *.swm
+recursive-exclude venv *
+recursive-exclude .venv *
+recursive-exclude dist *
+recursive-exclude build *
+recursive-exclude *.egg-info *
+recursive-exclude .git *
+recursive-exclude .mypy_cache *
+recursive-exclude __pycache__ *
+global-exclude **/__pycache__
