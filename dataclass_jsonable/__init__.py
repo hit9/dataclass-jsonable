@@ -5,7 +5,7 @@ Requires: Python >= 3.7
 
 Supported type annotations:
 
-    bool, int, float, str, Decimal, datetime, timedelta
+    bool, int, float, str, Decimal, datetime, timedelta, Enum, IntEnum
     Any, Optional[X]
     List[X], Tuple[X], Set[X], Dict[str, X],
     JSONAble (nested)
@@ -124,21 +124,11 @@ class JSONAble:
         elif _is_jsonable_like(t):
             # Nested
             return _encode_jsonable
-        elif _is_generics(t) and _get_generics_origin(t) is list:
-            # List[E]
+        elif _is_generics(t) and _get_generics_origin(t) in {list, set, tuple}:
+            # List[E] / Set[E] / Tuple[E]
             args = _get_generics_args(t)
             f = cls.get_encoder(args[0])
             return lambda x: [f(e) for e in x]
-        elif _is_generics(t) and _get_generics_origin(t) is set:
-            # Set[E]
-            args = _get_generics_args(t)
-            f = cls.get_encoder(args[0])
-            return lambda x: {f(e) for e in x}
-        elif _is_generics(t) and _get_generics_origin(t) is set:
-            # Tuple[E]
-            args = _get_generics_args(t)
-            f = cls.get_encoder(args[0])
-            return lambda x: tuple(f(e) for e in x)
         elif _is_generics(t) and _get_generics_origin(t) is dict:
             # Dict[K, E]
             args = _get_generics_args(t)
@@ -198,7 +188,7 @@ class JSONAble:
             args = _get_generics_args(t)
             f = cls.get_decoder(args[0])
             return lambda x: {f(e) for e in x}
-        elif _is_generics(t) and _get_generics_origin(t) is set:
+        elif _is_generics(t) and _get_generics_origin(t) is tuple:
             # Tuple[E]
             args = _get_generics_args(t)
             f = cls.get_decoder(args[0])
