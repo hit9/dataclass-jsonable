@@ -62,18 +62,24 @@ print(Box.from_json(d))
 * `Dict[str, X]` encoded to `dict`
 * Nested `JSONAble` or `J` dataclasses.
 
-## Customization Options
+## Customization or Overriding
 
-Specific a custom dictionary key:
+We can override the default conversion behaviors with `json_options`:
 
 ```python
-from dataclasses import dataclass, field
-from dataclass_jsonable import J, json_options
-
-@dataclass
-class Person(J):
-    name: str = field(metadata={"j": json_options(name="new_name")})
+from dataclasses import field
+from dataclass_jsonable import json_options
 ```
+
+Supported options:
+
+1. Specific a custom dictionary key over the default field's name:
+
+   ```python
+   @dataclass
+   class Person(J):
+       name: str = field(metadata={"j": json_options(name="new_name")})
+   ```
 
 ## License
 
