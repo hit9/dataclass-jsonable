@@ -3,6 +3,10 @@
 Simple, practical and overridable conversions between dataclasses
 and jsonable dictionaries.
 
+## Requirements
+
+Python >= 3.7
+
 ## Quick Example
 
 ```python

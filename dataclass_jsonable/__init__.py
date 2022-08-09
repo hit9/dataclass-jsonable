@@ -94,7 +94,7 @@ class JSONAble:
         elif t is Any:
             # Any runs reflection encoding.
             return lambda x: cls.get_encoder(type(x))(x)
-        elif isinstance(t, type) and issubclass(t, JSONAble):
+        elif _is_jsonable_like(t):
             # Nested
             return _encode_jsonable
         elif _is_generics(t) and _get_generics_origin(t) is list:
@@ -158,7 +158,7 @@ class JSONAble:
             return lambda x: cls.get_decoder(type(x))(x)
         elif isinstance(t, type) and issubclass(t, Enum):
             return t
-        elif isinstance(t, type) and issubclass(t, JSONAble):
+        elif _is_jsonable_like(t):
             # Nested
             return lambda x: t.from_json(x)
         elif _is_generics(t) and _get_generics_origin(t) is list:
@@ -282,3 +282,13 @@ def _get_generics_origin(t):
 
 def _get_generics_args(t):
     return getattr(t, "__args__", tuple())
+
+
+def _is_jsonable_like(t) -> bool:
+    if isinstance(t, type):
+        if issubclass(t, JSONAble):
+            return True
+        if hasattr(t, "from_json") and hasattr(t, "json"):
+            # `t` has from_json and json methods defined.
+            return True
+    return False
