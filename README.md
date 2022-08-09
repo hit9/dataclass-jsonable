@@ -1,11 +1,17 @@
 # dataclass-jsonable
 
-Simple, practical and overridable conversions between dataclasses
-and jsonable dictionaries.
+Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 ## Requirements
 
 Python >= 3.7
+
+## Supported Type Annotations
+
+* `bool`, `int`, `float`, `str`, `Decimal`, `datetime`, `timedelta`
+* `Any`, `Optional[X]`
+* `List[X]`, `Tuple[X]`, `Set[X]`, `Dict[str, X]`
+* `JSONAble`
 
 ## Quick Example
 
@@ -44,6 +50,8 @@ d = box.json()
 # Construct dataclass from jsonable dictionary.
 box1: Box = Box.from_json(d)
 ```
+
+
 
 ## License
 

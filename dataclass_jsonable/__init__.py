@@ -3,11 +3,11 @@ Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 Requires: Python >= 3.7
 
-Supported type annotation X:
+Supported type annotations:
 
-    bool int float str Decimal datetime timedelta
-    Any Optional[X]
-    List[X] Tuple[X] Set[X] Dict[str, X]
+    bool, int, float, str, Decimal, datetime, timedelta
+    Any, Optional[X]
+    List[X], Tuple[X], Set[X], Dict[str, X],
     JSONAble (nested)
 """
 
@@ -226,7 +226,7 @@ class JSONAble:
         """Internal method to help to get the right json_options to use for given field `f`.
         For each field, we firstly checkout field-level json_options, if declared. And then
         the class-level json_options.
-        The result will be cached as `_dataclass_jsonable_j` in the field.
+        The result will be cached in this field's metadata as key `_dataclass_jsonable_j`.
         """
         k = "_dataclass_jsonable_j"
 
