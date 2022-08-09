@@ -7,7 +7,7 @@ Supported type annotations:
 
     bool, int, float, str, Decimal, datetime, timedelta, Enum, IntEnum
     Any, Optional[X]
-    List[X], Tuple[X], Set[X], Dict[str, X],
+    List[X], Tuple[X, ...], Set[X], Dict[str, X],
     JSONAble (nested)
 """
 
@@ -124,11 +124,19 @@ class JSONAble:
         elif _is_jsonable_like(t):
             # Nested
             return _encode_jsonable
-        elif _is_generics(t) and _get_generics_origin(t) in {list, set, tuple}:
-            # List[E] / Set[E] / Tuple[E]
+        elif _is_generics(t) and _get_generics_origin(t) in {list, set}:
+            # List[E] / Set[E]
             args = _get_generics_args(t)
             f = cls.get_encoder(args[0])
             return lambda x: [f(e) for e in x]
+        elif _is_generics(t) and _get_generics_origin(t) is tuple:
+            args = _get_generics_args(t)
+            if len(args) == 2 and args[1] is Ellipsis:
+                # Tuple[E, ...]
+                f = cls.get_encoder(args[0])
+                return lambda x: [f(e) for e in x]
+            # Tuple[E1, E2, E3]
+            return lambda x: [cls.get_encoder(args[i])(e) for i, e in enumerate(x)]
         elif _is_generics(t) and _get_generics_origin(t) is dict:
             # Dict[K, E]
             args = _get_generics_args(t)
@@ -189,10 +197,13 @@ class JSONAble:
             f = cls.get_decoder(args[0])
             return lambda x: {f(e) for e in x}
         elif _is_generics(t) and _get_generics_origin(t) is tuple:
-            # Tuple[E]
             args = _get_generics_args(t)
-            f = cls.get_decoder(args[0])
-            return lambda x: tuple(f(e) for e in x)
+            if len(args) == 2 and args[1] is Ellipsis:
+                # Tuple[E, ...]
+                f = cls.get_decoder(args[0])
+                return lambda x: tuple(f(e) for e in x)
+            # Tuple[E1, E2, E3]
+            return lambda x: tuple(cls.get_decoder(args[i])(e) for i, e in enumerate(x))
         elif _is_generics(t) and _get_generics_origin(t) is dict:
             # Dict[K, E]
             args = _get_generics_args(t)
