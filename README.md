@@ -6,13 +6,6 @@ Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 Python >= 3.7
 
-## Built-in Supported Type Annotations
-
-* `bool`, `int`, `float`, `str`, `Decimal`, `datetime`, `timedelta`, `Enum`, `IntEnum`
-* `Any`, `Optional[X]`
-* `List[X]`, `Tuple[X]`, `Set[X]`, `Dict[str, X]`
-* `JSONAble`
-
 ## Quick Example
 
 ```python
@@ -56,7 +49,31 @@ print(d)  # {'pens': [{'color': 1, 'price': '20.1', 'produced_at': 1660023062}]}
 print(Box.from_json(d))
 ```
 
+## Built-in Supported Types
 
+* `bool`, `int`, `float`, `str`, `None` encoded as it is.
+* `Decimal` encoded to `str`.
+* `datetime` encoded to timestamp integer via `.timestamp()` method.
+  `timedelta` encoded to integer via `.total_seconds()` method.
+* `Enum` and `IntEnum` encoded to their values via `.value` attribute.
+* `Any` is encoded according to its `type`.
+* `Optional[X]` is supported, but `Union[X, Y, ...]` is not.
+* `List[X]`, `Tuple[X]`, `Set[X]` are all encoded to `list`.
+* `Dict[str, X]` encoded to `dict`
+* Nested `JSONAble` or `J` dataclasses.
+
+## Customization Options
+
+Specific a custom dictionary key:
+
+```python
+from dataclasses import dataclass, field
+from dataclass_jsonable import J, json_options
+
+@dataclass
+class Person(J):
+    name: str = field(metadata={"j": json_options(name="new_name")})
+```
 
 ## License
 
