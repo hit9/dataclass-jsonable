@@ -6,9 +6,9 @@ Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 Python >= 3.7
 
-## Supported Type Annotations
+## Built-in Supported Type Annotations
 
-* `bool`, `int`, `float`, `str`, `Decimal`, `datetime`, `timedelta`
+* `bool`, `int`, `float`, `str`, `Decimal`, `datetime`, `timedelta`, `Enum`, `IntEnum`
 * `Any`, `Optional[X]`
 * `List[X]`, `Tuple[X]`, `Set[X]`, `Dict[str, X]`
 * `JSONAble`
@@ -16,6 +16,11 @@ Python >= 3.7
 ## Quick Example
 
 ```python
+from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal
+from enum import IntEnum
+from typing import List
 from dataclass_jsonable import J
 
 class Color(IntEnum):
@@ -43,12 +48,12 @@ box = Box(
     ]
 )
 
-# Encode to jsonable dictionary.
+# Encode to a jsonable dictionary.
 d = box.json()
-# {'pens': [{'color': 1, 'price': '20.1', 'produced_at': 1660023062}]}
+print(d)  # {'pens': [{'color': 1, 'price': '20.1', 'produced_at': 1660023062}]}
 
-# Construct dataclass from jsonable dictionary.
-box1: Box = Box.from_json(d)
+# Construct dataclass from a jsonable dictionary.
+print(Box.from_json(d))
 ```
 
 
