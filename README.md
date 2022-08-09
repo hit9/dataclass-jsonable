@@ -2,9 +2,15 @@
 
 Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
-## Requirements
+## Installation
 
-Python >= 3.7
+```
+pip install dataclass-jsonable
+```
+
+Requirements:
+
+* Python >= 3.7
 
 ## Quick Example
 
@@ -31,15 +37,7 @@ class Pen(J):
 class Box(J):
     pens: List[Pen]
 
-box = Box(
-    pens=[
-        Pen(
-            color=Color.BLUE,
-            price=Decimal("20.1"),
-            produced_at=datetime.now(),
-        )
-    ]
-)
+box = Box(pens=[Pen(color=Color.BLUE, price=Decimal("20.1"), produced_at=datetime.now())])
 
 # Encode to a jsonable dictionary.
 d = box.json()
@@ -62,7 +60,7 @@ print(Box.from_json(d))
 * `Dict[str, X]` encoded to `dict`
 * Nested `JSONAble` or `J` dataclasses.
 
-## Customization or Overriding
+## Customization / Overriding Examples
 
 We can override the default conversion behaviors with `json_options`:
 
@@ -71,15 +69,53 @@ from dataclasses import field
 from dataclass_jsonable import json_options
 ```
 
-Supported options:
+Specific a custom dictionary key over the default field's name:
 
-1. Specific a custom dictionary key over the default field's name:
+```python
+@dataclass
+class Person(J):
+    name: str = field(metadata={"j": json_options(name="new_name")})
+# Person(name="value") => {"new_name": "value"}
+```
 
-   ```python
-   @dataclass
-   class Person(J):
-       name: str = field(metadata={"j": json_options(name="new_name")})
-   ```
+Omit a field if its value is empty:
+
+```python
+@dataclass
+class Book(J):
+    name: str = field(metadata={"j": json_options(omitempty=True)})
+# Book(name="") => {}
+```
+
+And we can specify what is 'empty' via option `omitempty_tester`:
+
+```python
+@dataclass
+class Book(J):
+    attr: Optional[str] = field(
+        default=None,
+        metadata={
+            "j": json_options(omitempty=True, omitempty_tester=lambda x: x is None)
+        },
+    )
+
+Book(attr="").json()  # => {'attr': ''}
+Book(attr=None).json()  # => {}
+```
+
+Always skip a field, stop some "private" field from exporting:
+
+```python
+@dataclass
+class Obj(J):
+    attr: str = field(
+        metadata={"j": json_options(skip=True)},
+    )
+
+Obj(attr="private").json() # => {}
+```
+
+
 
 ## License
 
