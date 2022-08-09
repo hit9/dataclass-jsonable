@@ -72,6 +72,12 @@ class json_options:
     # Uses `get_decoder` to get the default decoder function by annotated type.
     decoder: Optional[F] = None
 
+    # Hook function to be executed before decoder's execution.
+    # The decoding looks like `before_decoder(decoder(dict_value))` if this option is set.
+    # Although this feature can be achieved by a new `decoder` function, but it's more
+    # convenient to work with the builtin decoder functions.
+    before_decoder: Optional[F] = None
+
 
 @dataclass
 class JSONAble:
@@ -313,6 +319,10 @@ class JSONAble:
             # Value in dictionary `d`.
             if v is None:
                 v = d[k]
+
+            # Call hook function if provided.
+            if options.before_decoder:
+                v = options.before_decoder(v)
 
             # Obtain the decoder function.
             decoder = options.decoder or cls.get_decoder(t)
