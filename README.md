@@ -3,7 +3,7 @@
 Simple, practical and overridable conversions between dataclasses
 and jsonable dictionaries.
 
-## Quick Examples
+## Quick Example
 
 ```python
 from dataclass_jsonable import J
@@ -40,7 +40,6 @@ d = box.json()
 # Construct dataclass from jsonable dictionary.
 box1: Box = Box.from_json(d)
 ```
-
 
 ## License
 

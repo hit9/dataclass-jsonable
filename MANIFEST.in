@@ -1,4 +1,4 @@
-include setup.py dataclass_jsonable dataclass_jsonable/py.typed
+include README.md setup.py dataclass_jsonable dataclass_jsonable/py.typed
 recursive-include *.py
 recursive-include dataclass_jsonable *.py
 recursive-include dataclass_jsonable/* *.py
