@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
+from types import MappingProxyType
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
@@ -29,29 +30,39 @@ T = TypeVar("T", bound="JSONAble")
 # encoder/decoder function.
 F = Callable[[V], V]
 
+# Function that tests a value.
+# Returns a bool and accepts a given argument.
+Tester = Callable[[V], bool]
+
 # Jsonable dictionary.
 JSON = Dict[str, V]
 
 
-@dataclass
+@dataclass(frozen=True)
 class json_options:
-    """Field-level options to override the default conversion behavior."""
+    """Field-level options to override the default conversion behavior.
+    For each option, leaving `None` means not-set.
+    """
 
     # Custom key to be mapping in the dictionary.
     # Uses the name of this field by default.
     name: Optional[str] = None
 
-    # Omit this field if it has an empty value.
+    # Omit this field if it has an empty value, defaults to False.
     # This option is only about encoding.
-    omitempty: bool = False
+    omitempty: Optional[bool] = None
 
-    # Always skip this field during conversions.
-    skip: bool = False
+    # Function to test whether a value can be called "empty".
+    # Defaults to `lambda x: not x`.
+    omitempty_tester: Optional[Tester] = None
+
+    # Always skip this field during conversions, defaults to False.
+    skip: Optional[bool] = False
 
     # Default value before decoding, if the key is missing in the dictionary.
     # This option is only decoding.
     # Setting this to None means this option should be ignored.
-    default_on_missing: V = None
+    default_on_missing: Optional[V] = None
 
     # Custom encoder function, to be called like: encoder(field_value).
     # Uses `get_encoder` to get the default encoder function by annotated type.
@@ -65,6 +76,17 @@ class json_options:
 @dataclass
 class JSONAble:
     """Base of jsonable dataclass."""
+
+    # Default json_options for this dataclass.
+    #
+    # Override this variable to achieve class-level custom behaviors. For example,
+    # setting this to `json_options(omitempty=True)` means that by default, each field
+    # will be omitted if its value is empty.
+    #
+    # Further, we can still override class-level `__default_json_options__` options by
+    # field-level json_options. For each option, we first checkout it in the field-level
+    # json_options (if declared), and then in the class-level `__default_json_options__`.
+    __default_json_options__ = json_options()
 
     @classmethod
     def get_encoder(cls, t) -> F:
@@ -194,6 +216,41 @@ class JSONAble:
             return lambda x: None if x is None else f(x)
         raise NotImplementedError(f"get_decoder not support type {t}")
 
+    @classmethod
+    def _get_json_options(cls, f) -> json_options:
+        """Internal method to help to get the right json_options to use for given field `f`.
+        For each field, we firstly checkout field-level json_options, if declared. And then
+        the class-level json_options.
+        The result will be cached as `_dataclass_jsonable_j` in the field.
+        """
+        k = "_dataclass_jsonable_j"
+
+        # Check cache at first.
+        if k in f.metadata:
+            return f.metadata[k]
+
+        # Initial json_options from class-level json_options.
+        options = cls.__default_json_options__
+
+        # Field-level declared json_options, may be None.
+        field_options = f.metadata.get("j")
+
+        if field_options:
+            # Update options with field_options.
+
+            # kwds1 is arguments that were set in field_options.
+            kwds1 = {k: v for k, v in field_options.__dict__.items() if v is not None}
+            # kwds2 is arguments that were set at class-level.
+            kwds2 = {k: v for k, v in options.__dict__.items() if v is not None}
+            # kwds1 first (aka field-level options first).
+            kwds2.update(kwds1)
+            # And we should make a new json_options.
+            options = json_options(**kwds2)
+
+        # Cache this result in field.metadata.
+        f.metadata = _replace_mapping_proxy(f.metadata, {k: options})
+        return options
+
     def json(self) -> JSON:
         """Converts this dataclass instance to a dictionary recursively."""
 
@@ -202,17 +259,21 @@ class JSONAble:
         for name, f in self.__dataclass_fields__.items():
             t = f.type  # Field's type annotated
             v = getattr(self, name)  # Field's value
-            opts = f.metadata.get("j") or json_options()
+            options = self._get_json_options(f)
 
-            if opts.skip:
+            if options.skip:
                 continue
 
-            if opts.omitempty and not v:
-                continue
+            if options.omitempty:
+                omitempty_tester = options.omitempty_tester or _default_omitempty_tester
+                if omitempty_tester(v):
+                    continue
 
             # Key in dictionary `d`.
-            k = opts.name or name
-            encoder = opts.encoder or self.get_encoder(t)
+            k = options.name or name
+
+            # Encode.
+            encoder = options.encoder or self.get_encoder(t)
             d[k] = encoder(v)
 
         return d
@@ -226,20 +287,23 @@ class JSONAble:
 
         for name, f in cls.__dataclass_fields__.items():
             t = f.type  # Field's type annotated.
-            opts = f.metadata.get("j") or json_options()
-            # Key in dictionary.
-            k = opts.name or name
 
-            if opts.skip:
+            options = cls._get_json_options(f)
+
+            # Key in dictionary.
+            k = options.name or name
+
+            if options.skip:
                 continue
 
             v = None
 
             if k not in d:
                 # Key is missing in dictionary.
-                if opts.default_on_missing is not None:
+                default_on_missing = options.default_on_missing
+                if default_on_missing is not None:
                     # Gives a default value before decoding.
-                    v = opts.default_on_missing
+                    v = default_on_missing
                 else:
                     # Just continue going if the value is missing.
                     # An error like "missing 1 required positional argument" will be raised if this field doesn't
@@ -251,7 +315,7 @@ class JSONAble:
                 v = d[k]
 
             # Obtain the decoder function.
-            decoder = opts.decoder or cls.get_decoder(t)
+            decoder = options.decoder or cls.get_decoder(t)
             kwds[name] = decoder(v)
 
         return cls(**kwds)  # type: ignore
@@ -270,6 +334,8 @@ _encode_jsonable = lambda x: x.json()
 _decode_datetime = lambda x: datetime.fromtimestamp(int(x))
 _decode_timedelta = lambda x: timedelta(seconds=int(x))
 _decode_None = lambda _: None
+
+_default_omitempty_tester = lambda x: not x
 
 # Utils
 def _is_generics(t) -> bool:
@@ -292,3 +358,10 @@ def _is_jsonable_like(t) -> bool:
             # `t` has from_json and json methods defined.
             return True
     return False
+
+
+def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
+    """Copy a MappingProxyType `m`, and update it with `kwds`."""
+    d = dict(m)
+    d.update(**kwds)
+    return MappingProxyType(d)
