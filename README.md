@@ -162,6 +162,20 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj.from_json({"a": [{"k": "v"}]})  # Obj(a=[Elem(k='v')])
   ```
 
+* Postponed annotations (the `ForwardRef` in [PEP 563](https://www.python.org/dev/peps/pep-0563/)).
+
+  ```python
+  @dataclass
+  class Node(J):
+      name: str
+      left: Optional["Node"] = None
+      right: Optional["Node"] = None
+
+  root = Node("root", left=Node("left"), right=Node("right"))
+  root.json()
+  # {'name': 'root', 'left': {'name': 'left', 'left': None, 'right': None}, 'right': {'name': 'right', 'left': None, 'right': None}}
+  ```
+
 If these built-in default conversion behaviors do not meet your needs,
 or your type is not on the list,
 you can use [json_options](#customization--overriding-examples) introduced below to customize it.

@@ -11,12 +11,13 @@ Supported type annotations:
     JSONAble (nested)
 """
 
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, ForwardRef, Optional, TypeVar, Union
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
 
@@ -116,6 +117,13 @@ class JSONAble:
             return _encode_datetime
         elif t is timedelta:
             return _encode_timedelta
+        elif isinstance(t, str):
+            # "X"
+            return cls.get_encoder(ForwardRef(t))
+        elif isinstance(t, ForwardRef):
+            # ForwardRef("X")
+            cls_module = sys.modules[cls.__module__]
+            return cls.get_encoder(_get_type_by_forward_ref(t, cls_module))
         elif isinstance(t, type) and issubclass(t, Enum):
             return _encode_enum
         elif t is Any:
@@ -178,6 +186,13 @@ class JSONAble:
             return _decode_datetime
         elif t is timedelta:
             return _decode_timedelta
+        elif isinstance(t, str):
+            # "X"
+            return cls.get_decoder(ForwardRef(t))
+        elif isinstance(t, ForwardRef):
+            # ForwardRef("X")
+            cls_module = sys.modules[cls.__module__]
+            return cls.get_decoder(_get_type_by_forward_ref(t, cls_module))
         elif t is Any:
             # Any returns reflection decoding.
             return lambda x: cls.get_decoder(type(x))(x)
@@ -349,6 +364,7 @@ _default_omitempty_tester = lambda x: not x
 
 # Utils
 def _is_generics(t) -> bool:
+    """Returns whether the given type `t` is a generics type."""
     return hasattr(t, "__origin__") and hasattr(t, "__args__")
 
 
@@ -357,10 +373,12 @@ def _get_generics_origin(t):
 
 
 def _get_generics_args(t):
+    """Returns the arguments that build the given type `t`."""
     return getattr(t, "__args__", tuple())
 
 
 def _is_jsonable_like(t) -> bool:
+    """Returns whether the given type `t` is like a `JSONAble` dataclass."""
     if isinstance(t, type):
         if issubclass(t, JSONAble):
             return True
@@ -375,3 +393,14 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     d = dict(m)
     d.update(**kwds)
     return MappingProxyType(d)
+
+
+def _get_type_by_forward_ref(ref: ForwardRef, module):
+    """Returns the real type that given `ref` referenced to.
+    The `module` is where this `ref` is declared.
+    """
+    k = ref.__forward_arg__
+    tp = getattr(module, k)
+    if not tp:
+        raise ValueError(f"cannot find type {k} in {module}")
+    return tp
