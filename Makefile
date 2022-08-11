@@ -1,6 +1,6 @@
 lint:
-	black .
-	isort .
+	black --check dataclass_jsonable
+	isort --profile black --ca --check .
 clean:
 	rm -rf dist build *egg-info
 

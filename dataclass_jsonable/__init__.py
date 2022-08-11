@@ -16,8 +16,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
-from typing import (Any, Callable, Dict, Optional, TypeVar, Union,
-                    get_type_hints)
+from typing import Any, Callable, Dict, Optional, TypeVar, Union, get_type_hints
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
 
