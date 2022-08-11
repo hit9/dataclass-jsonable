@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from dataclass_jsonable import J, json_options
+from dataclass_jsonable import J
 
 
 @dataclass
