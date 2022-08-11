@@ -1,8 +1,11 @@
 # dataclass-jsonable
 
+[![dataclass-jsonable ci](https://github.com/hit9/dataclass-jsonable/actions/workflows/ci.yml/badge.svg)](https://github.com/hit9/dataclass-jsonable/actions/workflows/ci.yml)
+
 Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 It maps dataclasses to jsonable dictionaries but not json strings.
+
 
 ## Features
 
