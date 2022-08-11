@@ -100,7 +100,7 @@ class JSONAble:
         Raises `NotImplementedError` if given type is not supported.
         You can override this function by declaring a subclass that extends `JSONAble`.
         """
-        if t is None:
+        if t is type(None):
             return _encode_None
         elif t is bool:
             return bool
@@ -162,7 +162,7 @@ class JSONAble:
         Raises `NotImplementedError` if given type is not supported.
         You can override this function by declaring a subclass that extends `JSONAble`.
         """
-        if t is None:
+        if t is type(None):
             return _decode_None
         elif t is bool:
             return bool
