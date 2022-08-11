@@ -11,13 +11,12 @@ Supported type annotations:
     JSONAble (nested)
 """
 
-import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Callable, Dict, ForwardRef, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, TypeVar, Union, get_type_hints
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
 
@@ -117,13 +116,6 @@ class JSONAble:
             return _encode_datetime
         elif t is timedelta:
             return _encode_timedelta
-        elif isinstance(t, str):
-            # "X"
-            return cls.get_encoder(ForwardRef(t))
-        elif isinstance(t, ForwardRef):
-            # ForwardRef("X")
-            cls_module = sys.modules[cls.__module__]
-            return cls.get_encoder(_get_type_by_forward_ref(t, cls_module))
         elif isinstance(t, type) and issubclass(t, Enum):
             return _encode_enum
         elif t is Any:
@@ -186,13 +178,6 @@ class JSONAble:
             return _decode_datetime
         elif t is timedelta:
             return _decode_timedelta
-        elif isinstance(t, str):
-            # "X"
-            return cls.get_decoder(ForwardRef(t))
-        elif isinstance(t, ForwardRef):
-            # ForwardRef("X")
-            cls_module = sys.modules[cls.__module__]
-            return cls.get_decoder(_get_type_by_forward_ref(t, cls_module))
         elif t is Any:
             # Any returns reflection decoding.
             return lambda x: cls.get_decoder(type(x))(x)
@@ -272,13 +257,21 @@ class JSONAble:
         f.metadata = _replace_mapping_proxy(f.metadata, {k: options})
         return options
 
+    @classmethod
+    def _get_typing_hint_by_field(cls, f):
+        """Get typing hint for given field.
+        Notes that `f.type` may be a string or ForwardRef.
+        `get_type_hints` will evaluate them.
+        """
+        return get_type_hints(cls)[f.name]
+
     def json(self) -> JSON:
         """Converts this dataclass instance to a dictionary recursively."""
 
         d: JSON = {}
 
         for name, f in self.__dataclass_fields__.items():
-            t = f.type  # Field's type annotated
+            t = self._get_typing_hint_by_field(f)
             v = getattr(self, name)  # Field's value
             options = self._get_json_options(f)
 
@@ -307,7 +300,7 @@ class JSONAble:
         kwds = {}
 
         for name, f in cls.__dataclass_fields__.items():
-            t = f.type  # Field's type annotated.
+            t = cls._get_typing_hint_by_field(f)
 
             options = cls._get_json_options(f)
 
@@ -393,14 +386,3 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     d = dict(m)
     d.update(**kwds)
     return MappingProxyType(d)
-
-
-def _get_type_by_forward_ref(ref: ForwardRef, module):
-    """Returns the real type that given `ref` referenced to.
-    The `module` is where this `ref` is declared.
-    """
-    k = ref.__forward_arg__
-    tp = getattr(module, k)
-    if not tp:
-        raise ValueError(f"cannot find type {k} in {module}")
-    return tp
