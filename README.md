@@ -1,6 +1,7 @@
 # dataclass-jsonable
 
 [![dataclass-jsonable ci](https://github.com/hit9/dataclass-jsonable/actions/workflows/ci.yml/badge.svg)](https://github.com/hit9/dataclass-jsonable/actions/workflows/ci.yml)
+![](https://img.shields.io/badge/license-BSD3-brightgreen)
 
 Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
