@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from enum import IntEnum
 from typing import List
 
@@ -39,6 +40,8 @@ class Person(J):
 @dataclass
 class AddressBook(J):
     people: List[Person] = field(default_factory=list)
+    price: Decimal = Decimal("0.0")
+    produced_at: datetime = field(default_factory=datetime.now)
 
 
 def test_simple():
@@ -56,7 +59,8 @@ def test_simple():
                     )
                 ],
             )
-        ]
+        ],
+        produced_at=datetime(2022, 8, 7, 19, 30, 0),
     )
 
     # Encode
@@ -76,7 +80,9 @@ def test_simple():
                     }
                 ],
             }
-        ]
+        ],
+        "price": "0.0",
+        "produced_at": 1659871800,
     }
 
     # Decode
