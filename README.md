@@ -13,11 +13,13 @@ It maps dataclasses to jsonable dictionaries but not json strings.
 * Easy to use.
 * Supports common type annotations.
 * Supports recursive conversions.
-* Supports field-level and dataclass-level overiding.
+* Supports field-level and dataclass-level overriding.
 
 ## Installation
 
 Requirements: Python >= 3.7
+
+Install via `pip`:
 
 ```
 pip install dataclass-jsonable
@@ -296,7 +298,7 @@ An example list about `json_options`:
   Obj.from_json({"elems": "a,b,c"})  # => Obj(elems=['a', 'b', 'c'])
   ```
 
-  The following code snippet about `datetime` is a good example,
+  The following code snippet about `datetime` is a very common example,
   you might want ISO format datetime conversion over timestamp integers.
 
   ```python

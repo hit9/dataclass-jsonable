@@ -10,10 +10,14 @@ class Obj(J):
 
     a: Optional[int] = None
     b: Optional[str] = None
+    # We could still override the default json_options at field level.
+    c: Optional[str] = field(
+        default=None, metadata={"j": json_options(omitempty=False)}
+    )
 
 
 def test_option_classlevel_omitempty():
     o = Obj(b="b")
-    x = {"b": "b"}
+    x = {"b": "b", "c": None}
     assert o.json() == x
     assert Obj.from_json(x) == o
