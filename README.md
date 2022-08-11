@@ -4,6 +4,13 @@ Simple and flexible conversions between dataclasses and jsonable dictionaries.
 
 It maps dataclasses to jsonable dictionaries but not json strings.
 
+## Features
+
+* Easy to use.
+* Supports common type annotations.
+* Supports recursive conversions.
+* Supports field-level and dataclass-level overiding.
+
 ## Installation
 
 Requirements: Python >= 3.7
