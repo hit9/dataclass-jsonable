@@ -49,3 +49,27 @@ def test_nested_j_simple():
     x = {"a": [{"k": "v"}]}
     assert o.json() == x
     assert Obj.from_json(x) == o
+
+
+@dataclass
+class JsonLike:  # Not extend from J
+    parts: List[str]
+
+    @classmethod
+    def from_json(cls, d: str) -> "JsonLike":
+        return cls(parts=d.split(";"))
+
+    def json(self) -> str:
+        return ";".join(self.parts)
+
+
+@dataclass
+class Container(J):
+    f: JsonLike
+
+
+def test_nested_j_jsonlike():
+    c = Container(f=JsonLike(parts=["a", "b", "c"]))
+    x = {"f": "a;b;c"}
+    assert c.json() == x
+    assert Container.from_json(x) == c
