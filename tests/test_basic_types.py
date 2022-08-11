@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from typing import Any, Optional
 
 from dataclass_jsonable import J
 
@@ -28,6 +29,9 @@ class S1(J):
     h: timedelta
     e1: E1
     e2: E2
+    x: Any
+    y: Any
+    o: Optional[int]
 
 
 def test_basic_types():
@@ -42,6 +46,9 @@ def test_basic_types():
         h=timedelta(days=1),
         e1=E1.A,
         e2=E2.B,
+        x=1,
+        y="3",
+        o=3,
     )
     x = {
         "a": 1,
@@ -54,6 +61,9 @@ def test_basic_types():
         "h": 86400,
         "e1": 1,
         "e2": "B",
+        "x": 1,
+        "y": "3",
+        "o": 3,
     }
     assert s.json() == x
     assert S1.from_json(x) == s
