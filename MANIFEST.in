@@ -9,6 +9,7 @@ global-exclude *.swn
 global-exclude *.swm
 exclude tests
 exclude example*.py
+recursive-exclude tests *
 recursive-exclude venv *
 recursive-exclude .venv *
 recursive-exclude dist *
