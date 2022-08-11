@@ -322,7 +322,8 @@ An example list about `json_options`:
   class Obj(J):
       data: Dict[str, Any] = field(metadata={"j": json_options(before_decoder=json.loads)})
 
-  # Obj.from_json({"data": '{"k": "v"}'}) => Obj(data={'k': 'v'})
+  Obj.from_json({"data": '{"k": "v"}'})
+  # => Obj(data={'k': 'v'})
   ```
 
 * Customize default behaviors at the class level.

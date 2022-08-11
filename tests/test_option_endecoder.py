@@ -1,6 +1,7 @@
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List
 
 from dataclass_jsonable import J, json_options
 
@@ -42,3 +43,16 @@ def test_option_endecoder_datetime():
     x = {"created_at": "2022-01-01T01:01:01"}
     assert r.json() == x
     assert Record.from_json(x) == r
+
+
+@dataclass
+class Obj2(J):
+    data: Dict[str, Any] = field(
+        metadata={"j": json_options(before_decoder=json.loads)}
+    )
+
+
+def test_option_before_decoder():
+    o = Obj2(data={"k": "v"})
+    x = {"data": '{"k": "v"}'}
+    assert Obj2.from_json(x) == o
