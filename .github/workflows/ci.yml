@@ -1,0 +1,45 @@
+name: dataclass-jsonable ci
+
+env:
+  TZ: Asia/Shanghai
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+         os: [ubuntu-22.04]
+         python: [3.7, 3.8, "3.10"]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Install dataclass_jsonable
+      run: |
+        pip install -e .
+
+    - name: Install dev requirements
+      run: |
+        pip install -r requirements-dev.txt
+
+    - name: Run lints
+      run: |
+        make lint
+
+    - name: Run tests
+      run: |
+        pytest -s -x -v
