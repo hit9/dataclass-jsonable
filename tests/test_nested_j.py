@@ -32,3 +32,20 @@ def test_nested_j():
     }
     assert c.json() == x
     assert C.from_json(x) == c
+
+
+@dataclass
+class Elem(J):
+    k: str
+
+
+@dataclass
+class Obj(J):
+    a: List[Elem]
+
+
+def test_nested_j_simple():
+    o = Obj([Elem("v")])
+    x = {"a": [{"k": "v"}]}
+    assert o.json() == x
+    assert Obj.from_json(x) == o
