@@ -39,13 +39,13 @@ def test_forward_ref_node():
 
 
 @dataclass
-class Simple(J):
+class S1(J):
     data: "Dict[str, Any]"
     n: "Optional[int]"
 
 
 def test_forward_ref_generics():
-    s = Simple(data={"x": 1}, n=2)
+    s = S1(data={"x": 1}, n=2)
     assert s.json() == {"data": {"x": 1}, "n": 2}
-    s1 = Simple.from_json({"data": {"x": 1}, "n": 2})
+    s1 = S1.from_json({"data": {"x": 1}, "n": 2})
     assert s1 == s
