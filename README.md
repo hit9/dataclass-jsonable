@@ -221,6 +221,16 @@ An example list about `json_options`:
    Person(attr="value").json() # => {"new_attr": "value"}
    ```
 
+  And more, we can use a function to specific a custom dictionary key.
+  This may be convenient to work with class-level `__default_json_options__` attribute (check it below).
+
+  ```python
+  @dataclass
+  class Obj(J):
+      simple_value: int = field(metadata={"j": json_options(name_converter=to_camel_case)})
+  Obj(simple_value=1).json()  # => {"simpleValue": 1}
+  ```
+
 * Omit a field if its value is empty:
 
    ```python
@@ -347,6 +357,18 @@ An example list about `json_options`:
 
   Obj(b="b").json() # => {'b': 'b'}
   ````
+
+  ```python
+  @dataclass
+  class Obj(J):
+      __default_json_options__ = json_options(name_converter=to_camel_case)
+
+      status_code: int
+      simple_value: str
+
+  Obj2(status_code=1, simple_value="simple").json()
+  # => {"statusCode": 1, "simpleValue": "simple"}
+  ```
 
 ## License
 

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, get_type_hints
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union, get_type_hints
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
 
@@ -36,6 +36,9 @@ Tester = Callable[[V], bool]
 # Jsonable dictionary.
 JSON = Dict[str, V]
 
+# Function that converts a field's name.
+NameConverter = Callable[[str], str]
+
 
 @dataclass(frozen=True)
 class json_options:
@@ -46,6 +49,11 @@ class json_options:
     # Custom key to be mapping in the dictionary.
     # Uses the name of this field by default.
     name: Optional[str] = None
+
+    # A function that returns a custom key to be mapping in the dictionary.
+    # This option is similar to option `name`, but it's a function rather than a string.
+    # If the option `name` is set the same time, prefers `name` over `name_converter`.
+    name_converter: Optional[NameConverter] = None
 
     # Omit this field if it has an empty value, defaults to False.
     # This option is only about encoding.
@@ -284,7 +292,7 @@ class JSONAble:
                     continue
 
             # Key in dictionary `d`.
-            k = options.name or name
+            k = _util_get_field_key(name, options)
 
             # Encode.
             encoder = options.encoder or self.get_encoder(t)
@@ -305,7 +313,7 @@ class JSONAble:
             options = cls._get_json_options(f)
 
             # Key in dictionary.
-            k = options.name or name
+            k = _util_get_field_key(name, options)
 
             if options.skip:
                 continue
@@ -392,3 +400,15 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     d = dict(m)
     d.update(**kwds)
     return MappingProxyType(d)
+
+
+def _util_get_field_key(name: str, options: json_options) -> str:
+    """A util function returns the `key` in target dictionary.
+    :param name: the field's name.
+    :param options: the json_options for this field.
+    """
+    if options.name:
+        return options.name
+    elif options.name_converter:
+        return options.name_converter(name)
+    return name
