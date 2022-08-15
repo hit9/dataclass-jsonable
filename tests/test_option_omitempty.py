@@ -38,3 +38,9 @@ def test_option_omitempty_tester():
     x = {"b": 0}
     assert s.json() == x
     assert S.from_json(x) == s
+
+
+def test_option_omitempty_decoding():
+    x = {"data": 3, "name": None}
+    b = Book.from_json(x)
+    assert b == Book(name="", data=3)

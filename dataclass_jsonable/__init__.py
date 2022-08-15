@@ -328,6 +328,12 @@ class JSONAble:
             if v is None:
                 v = d[k]
 
+            if options.omitempty:
+                # Omit if the value from dictionary is empty.
+                omitempty_tester = options.omitempty_tester or _default_omitempty_tester
+                if omitempty_tester(v):
+                    continue
+
             # Call hook function if provided.
             if options.before_decoder:
                 v = options.before_decoder(v)
