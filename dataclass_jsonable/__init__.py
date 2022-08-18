@@ -50,10 +50,17 @@ class json_options:
     # Uses the name of this field by default.
     name: Optional[str] = None
 
-    # A function that returns a custom key to be mapping in the dictionary.
+    # A function that returns a custom key to be mapping in the dictionary
+    #   whenever converting to dictionary or dataclass.
     # This option is similar to option `name`, but it's a function rather than a string.
     # If the option `name` is set the same time, prefers `name` over `name_converter`.
     name_converter: Optional[NameConverter] = None
+
+    # This option is similar to option `name_converter`,
+    #   but only used when converting dictionary to dataclass.
+    # If this option is not set, default to use `name_converter`.
+    # If the option `name` is set the same time, prefers `name` over `name_inverter`.
+    name_inverter: Optional[NameConverter] = None
 
     # Omit this field if it has an empty value, defaults to False.
     # This option is only about encoding.
@@ -313,7 +320,7 @@ class JSONAble:
             options = cls._get_json_options(f)
 
             # Key in dictionary.
-            k = _util_get_field_key(name, options)
+            k = _util_get_field_key(name, options, is_invert=True)
 
             if options.skip:
                 continue
@@ -402,7 +409,9 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     return MappingProxyType(d)
 
 
-def _util_get_field_key(name: str, options: json_options) -> str:
+def _util_get_field_key(
+    name: str, options: json_options, is_invert: bool = False
+) -> str:
     """A util function returns the `key` in target dictionary.
     :param name: the field's name.
     :param options: the json_options for this field.
@@ -410,5 +419,8 @@ def _util_get_field_key(name: str, options: json_options) -> str:
     if options.name:
         return options.name
     elif options.name_converter:
+        if is_invert and options.name_inverter:
+            return options.name_inverter(name)
         return options.name_converter(name)
+
     return name
