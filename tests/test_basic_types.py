@@ -67,3 +67,14 @@ def test_basic_types():
     }
     assert s.json() == x
     assert S1.from_json(x) == s
+
+
+@dataclass
+class S2(J):
+    a: Decimal
+
+
+def test_basic_types_decimal_float():
+    s = S2(a=Decimal("1.11"))
+    x = {"a": 1.11}
+    assert S2.from_json(x) == s

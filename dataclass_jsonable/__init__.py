@@ -181,7 +181,7 @@ class JSONAble:
         elif t is float:
             return float
         elif t is Decimal:
-            return Decimal
+            return _decode_decimal
         elif t is datetime:
             return _decode_datetime
         elif t is timedelta:
@@ -366,6 +366,7 @@ _encode_jsonable = lambda x: x.json()
 _decode_datetime = lambda x: datetime.fromtimestamp(int(x))
 _decode_timedelta = lambda x: timedelta(seconds=int(x))
 _decode_None = lambda _: None
+_decode_decimal = lambda x: Decimal(str(x))
 
 _default_omitempty_tester = lambda x: not x
 
