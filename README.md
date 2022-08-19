@@ -231,6 +231,24 @@ An example list about `json_options`:
   Obj(simple_value=1).json()  # => {"simpleValue": 1}
   ```
 
+* Support separate field name converter when converting dictionary to dataclass:
+
+  ```python
+  @dataclass
+  def Person(J):
+    name: str = field(
+          metadata={
+              "j": json_options(
+                  name_converter=lambda x: x.capitalize(),
+                  name_inverter=lambda x: "nickname",
+            )
+        }
+    )
+  ```
+
+  As the `Person` defined above, it will convert to dictionary like `{"Name": "Jack"}` and can be loaded from `{"nickname": "Jack"}`.
+
+
 * Omit a field if its value is empty:
 
    ```python
