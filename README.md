@@ -231,7 +231,7 @@ An example list about `json_options`:
   Obj(simple_value=1).json()  # => {"simpleValue": 1}
   ```
 
-* Support separate field name converter when converting dictionary to dataclass:
+  And we may specific a custom field name converter when converts dictionary to dataclass:
 
   ```python
   @dataclass
@@ -247,7 +247,6 @@ An example list about `json_options`:
   ```
 
   As the `Person` defined above, it will convert to dictionary like `{"Name": "Jack"}` and can be loaded from `{"nickname": "Jack"}`.
-
 
 * Omit a field if its value is empty:
 
