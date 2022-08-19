@@ -10,7 +10,7 @@ Supported type annotations:
     List[X], Tuple[X, ...], Set[X], Dict[str, X],
     JSONAble (nested)
 """
-
+import enum
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -38,6 +38,11 @@ JSON = Dict[str, V]
 
 # Function that converts a field's name.
 NameConverter = Callable[[str], str]
+
+
+class Action(enum.IntEnum):
+    ENCODING = 1
+    DECODING = 2
 
 
 @dataclass(frozen=True)
@@ -299,7 +304,7 @@ class JSONAble:
                     continue
 
             # Key in dictionary `d`.
-            k = _util_get_field_key(name, options)
+            k = _util_get_field_key(name, options, Action.ENCODING)
 
             # Encode.
             encoder = options.encoder or self.get_encoder(t)
@@ -320,7 +325,7 @@ class JSONAble:
             options = cls._get_json_options(f)
 
             # Key in dictionary.
-            k = _util_get_field_key(name, options, is_invert=True)
+            k = _util_get_field_key(name, options, Action.DECODING)
 
             if options.skip:
                 continue
@@ -409,18 +414,18 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     return MappingProxyType(d)
 
 
-def _util_get_field_key(
-    name: str, options: json_options, is_invert: bool = False
-) -> str:
+def _util_get_field_key(name: str, options: json_options, action: Action) -> str:
     """A util function returns the `key` in target dictionary.
     :param name: the field's name.
     :param options: the json_options for this field.
     """
     if options.name:
         return options.name
-    elif options.name_converter:
-        if is_invert and options.name_inverter:
-            return options.name_inverter(name)
+
+    if action == Action.DECODING and options.name_inverter:
+        return options.name_inverter(name)
+
+    if options.name_converter:
         return options.name_converter(name)
 
     return name
