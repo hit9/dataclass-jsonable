@@ -387,6 +387,18 @@ An example list about `json_options`:
   # => {"statusCode": 1, "simpleValue": "simple"}
   ```
 
+## Debuging
+
+It provides a method `obj._get_origin_json()`,
+it returns the original json dictionary which constructs instance `obj` via `from_json()`.
+
+```python
+d = {"a": 1}
+obj = Obj.from_json(d)
+obj._get_origin_json()
+# => {"a": 1}
+```
+
 ## License
 
 BSD.

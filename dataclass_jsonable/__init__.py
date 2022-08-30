@@ -113,6 +113,12 @@ class JSONAble:
     # json_options (if declared), and then in the class-level `__default_json_options__`.
     __default_json_options__ = json_options()
 
+    def _get_origin_json(self) -> JSON:
+        """Debug purpose method to return the original JSON dictionary which constructs this instance via
+        `from_json` method.
+        """
+        return getattr(self, "__dataclass_origin_json__")
+
     @classmethod
     def get_encoder(cls, t) -> F:
         """Returns an encoder function for given type `t`.
@@ -362,7 +368,9 @@ class JSONAble:
             decoder = options.decoder or cls.get_decoder(t)
             kwds[name] = decoder(v)
 
-        return cls(**kwds)  # type: ignore
+        inst = cls(**kwds)
+        setattr(inst, "__dataclass_origin_json__", d)
+        return inst  # type: ignore
 
 
 J = JSONAble  # short alias
