@@ -317,7 +317,10 @@ class JSONAble:
             d[k] = encoder(v)
 
         return d
-
+    
+    # An alias for `json`
+    to_json = json
+    
     @classmethod
     def from_json(cls, d: JSON) -> T:
         """Constructs an instance of this dataclass from given jsonable dictionary."""
