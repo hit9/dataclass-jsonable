@@ -150,6 +150,15 @@ class JSONAble:
         elif _is_jsonable_like(t):
             # Nested
             return _encode_jsonable
+        elif t is list:
+            # list of elements.
+            return lambda x: [cls.get_encoder(type(e))(e) for e in x]
+        elif t is set:
+            # set of elements
+            return lambda x: {cls.get_encoder(type(e))(e) for e in x}
+        elif t is dict:
+            # dict
+            return _encode_dict
         elif _is_generics(t) and _get_generics_origin(t) in {list, set}:
             # List[E] / Set[E]
             args = _get_generics_args(t)
@@ -207,6 +216,15 @@ class JSONAble:
         elif t is Any:
             # Any returns reflection decoding.
             return lambda x: cls.get_decoder(type(x))(x)
+        elif t is list:
+            # list of elements.
+            return lambda x: [cls.get_decoder(type(e))(e) for e in x]
+        elif t is set:
+            # set of elements
+            return lambda x: {cls.get_decoder(type(e))(e) for e in x}
+        elif t is dict:
+            # dict
+            return _encode_dict
         elif isinstance(t, type) and issubclass(t, Enum):
             return t
         elif _is_jsonable_like(t):
@@ -392,6 +410,21 @@ _decode_None = lambda _: None
 _decode_decimal = lambda x: Decimal(str(x))
 
 _default_omitempty_tester = lambda x: not x
+
+
+def _encode_dict(x):
+    for k in x:
+        if not isinstance(k, str):
+            raise NotImplementedError("dict with non-str keys is not supported")
+    return {k: JSONAble.get_encoder(type(v))(v) for k, v in x.items()}
+
+
+def _decode_dict(x):
+    for k in x:
+        if not isinstance(k, str):
+            raise NotImplementedError("dict with non-str keys is not supported")
+    return {k: JSONAble.get_decoder(type(v))(v) for k, v in x.items()}
+
 
 # Utils
 def _is_generics(t) -> bool:
