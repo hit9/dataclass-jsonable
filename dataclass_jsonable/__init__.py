@@ -16,7 +16,17 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 __all__ = ("json_options", "JSONAble", "JSON", "J")
 
@@ -340,7 +350,7 @@ class JSONAble:
     to_json = json
 
     @classmethod
-    def from_json(cls, d: JSON) -> T:
+    def from_json(cls: Type[T], d: JSON) -> T:
         """Constructs an instance of this dataclass from given jsonable dictionary."""
 
         # Arguments for class `cls()`.
