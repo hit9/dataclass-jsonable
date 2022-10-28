@@ -58,7 +58,7 @@ class Pencil(J):
 
 # Decode
 
-pencil: Pencil = Pencil.from_json(
+pencil = Pencil.from_json(
     {
         "name": "pencil",
         "color": 1,
