@@ -329,6 +329,7 @@ class JSONAble:
 
         d: JSON = {}
 
+        __name_choice_map = getattr(self, "__name_choice_map", None)
         for name, f in self.__dataclass_fields__.items():
             t = self._get_typing_hint_by_field(f)
             v = getattr(self, name)  # Field's value
@@ -343,7 +344,10 @@ class JSONAble:
                     continue
 
             # Key in dictionary `d`.
-            k = _util_get_field_key(name, options, Action.ENCODING)[0]
+            if __name_choice_map and name in __name_choice_map:
+                k = __name_choice_map[name]
+            else:
+                k = _util_get_field_key(name, options, Action.ENCODING, __name_choice_map)[0]
 
             # Encode.
             encoder = options.encoder or self.get_encoder(t)
@@ -361,6 +365,8 @@ class JSONAble:
         # Arguments for class `cls()`.
         kwds = {}
 
+        _name_choice_map = {}
+
         for name, f in cls.__dataclass_fields__.items():
             t = cls._get_typing_hint_by_field(f)
 
@@ -377,6 +383,8 @@ class JSONAble:
             for _k in ks:
                 if _k in d:
                     k = _k
+                    # record the key in dictionary `d` for this field.
+                    _name_choice_map[name] = k
                     break
 
             if k is None:
@@ -410,6 +418,7 @@ class JSONAble:
 
         inst = cls(**kwds)
         setattr(inst, "__dataclass_origin_json__", d)
+        setattr(inst, "__name_choice_map", _name_choice_map)
         return inst  # type: ignore
 
 
@@ -478,7 +487,12 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     return MappingProxyType(d)
 
 
-def _util_get_field_key(name: str, options: json_options, action: Action) -> List[str]:
+def _util_get_field_key(
+    name: str,
+    options: json_options,
+    action: Action,
+    choice_map: Optional[JSON] = None,
+) -> List[str]:
     """A util function returns the `key` in target dictionary.
     :param name: the field's name.
     :param options: the json_options for this field.
@@ -486,8 +500,11 @@ def _util_get_field_key(name: str, options: json_options, action: Action) -> Lis
     if options.name:
         return [options.name]
 
-    if options.name_choice:
-        return options.name_choice
+    if action == Action.DECODING and options.name_choice:
+        return options.name_choice + [name]
+
+    if action == Action.ENCODING and choice_map and name in choice_map:
+        return [choice_map[name]]
 
     if action == Action.DECODING and options.name_inverter:
         return [options.name_inverter(name)]

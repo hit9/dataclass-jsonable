@@ -9,18 +9,16 @@ class ChoiceData(J):
 
 
 def test_option_name_choice():
+
     # choice 1
-    cd = ChoiceData(value="value")
-    x = {"Value": "value"}
+    x = {"Data": "value"}
+    cd = ChoiceData.from_json(x)
     assert cd.json() == x
-    assert ChoiceData.from_json(x) == cd
 
     # choice 2
     cd = ChoiceData(value="value")
-    x = {"Value": "value"}
-    y = {"Data": "value"}
-    assert cd.json() == x
-    assert ChoiceData.from_json(y) == cd
+    x = {"value": "value"}
+    assert cd.json() == ChoiceData.from_json(x)
 
 
 @dataclass
