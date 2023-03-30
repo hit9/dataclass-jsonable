@@ -344,10 +344,12 @@ class JSONAble:
                     continue
 
             # Key in dictionary `d`.
-            if __name_choice_map and name in __name_choice_map:
-                k = __name_choice_map[name]
-            else:
-                k = _util_get_field_key(name, options, Action.ENCODING, __name_choice_map)[0]
+            k = _util_get_field_keys(
+                name=name,
+                options=options,
+                action=Action.ENCODING,
+                choice_map=__name_choice_map
+            )[0]
 
             # Encode.
             encoder = options.encoder or self.get_encoder(t)
@@ -373,7 +375,7 @@ class JSONAble:
             options = cls._get_json_options(f)
 
             # Key in dictionary.
-            ks = _util_get_field_key(name, options, Action.DECODING)
+            ks = _util_get_field_keys(name, options, Action.DECODING)
 
             if options.skip:
                 continue
@@ -487,7 +489,7 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     return MappingProxyType(d)
 
 
-def _util_get_field_key(
+def _util_get_field_keys(
     name: str,
     options: json_options,
     action: Action,
@@ -501,9 +503,12 @@ def _util_get_field_key(
         return [options.name]
 
     if action == Action.DECODING and options.name_choice:
+        # get the candidates for this field.
         return options.name_choice + [name]
 
     if action == Action.ENCODING and choice_map and name in choice_map:
+        # if the name is chosen from `name_choice`, use the chosen name.
+        # else use the original name.
         return [choice_map[name]]
 
     if action == Action.DECODING and options.name_inverter:
