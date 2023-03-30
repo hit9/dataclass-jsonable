@@ -348,7 +348,7 @@ class JSONAble:
                 name=name,
                 options=options,
                 action=Action.ENCODING,
-                choice_map=__name_choice_map
+                choice_map=__name_choice_map,
             )[0]
 
             # Encode.
