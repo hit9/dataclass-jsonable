@@ -18,7 +18,7 @@ def test_option_name_choice():
     # choice 2
     cd = ChoiceData(value="value")
     x = {"value": "value"}
-    assert cd.json() == ChoiceData.from_json(x)
+    assert cd.json() == ChoiceData.from_json(x).json()
 
 
 @dataclass
@@ -35,7 +35,9 @@ def test_option_name():
 
 @dataclass
 class ChoiceData2(J):
-    value: str = field(metadata={"j": json_options(name="value", name_choice=["Value", "Data"])})
+    value: str = field(
+        metadata={"j": json_options(name="value", name_choice=["Value", "Data"])}
+    )
 
 
 def test_option_name_with_choice():

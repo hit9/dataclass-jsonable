@@ -2,7 +2,7 @@ from setuptools import setup  # type: ignore
 
 setup(
     name="dataclass-jsonable",
-    version="0.0.13",
+    version="0.0.14",
     author="hit9",
     author_email="hit9@icloud.com",
     description="Simple and flexible conversions between dataclasses and jsonable dictionaries.",
