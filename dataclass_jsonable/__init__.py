@@ -20,8 +20,8 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -64,6 +64,11 @@ class json_options:
     # Custom key to be mapping in the dictionary.
     # Uses the name of this field by default.
     name: Optional[str] = None
+
+    # A list of possible names for this field when converting to dataclass.
+    # It will match in order, the first matched name will be used.
+    # The first name in the list will be used when converting to json.
+    name_choice: Optional[List[str]] = None
 
     # A function that returns a custom key to be mapping in the dictionary
     #   whenever converting to dictionary or dataclass.
@@ -338,7 +343,7 @@ class JSONAble:
                     continue
 
             # Key in dictionary `d`.
-            k = _util_get_field_key(name, options, Action.ENCODING)
+            k = _util_get_field_key(name, options, Action.ENCODING)[0]
 
             # Encode.
             encoder = options.encoder or self.get_encoder(t)
@@ -362,14 +367,19 @@ class JSONAble:
             options = cls._get_json_options(f)
 
             # Key in dictionary.
-            k = _util_get_field_key(name, options, Action.DECODING)
+            ks = _util_get_field_key(name, options, Action.DECODING)
 
             if options.skip:
                 continue
 
-            v = None
+            # Find the first key in dictionary `d` that is in `ks`.
+            k = None
+            for _k in ks:
+                if _k in d:
+                    k = _k
+                    break
 
-            if k not in d:
+            if k is None:
                 # Key is missing in dictionary.
                 default_on_missing = options.default_on_missing
                 if default_on_missing is not None:
@@ -380,9 +390,8 @@ class JSONAble:
                     # An error like "missing 1 required positional argument" will be raised if this field doesn't
                     # have a default value declared.
                     continue
-
-            # Value in dictionary `d`.
-            if v is None:
+            else:
+                # Value in dictionary `d`.
                 v = d[k]
 
             if options.omitempty:
@@ -469,18 +478,21 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     return MappingProxyType(d)
 
 
-def _util_get_field_key(name: str, options: json_options, action: Action) -> str:
+def _util_get_field_key(name: str, options: json_options, action: Action) -> List[str]:
     """A util function returns the `key` in target dictionary.
     :param name: the field's name.
     :param options: the json_options for this field.
     """
     if options.name:
-        return options.name
+        return [options.name]
+
+    if options.name_choice:
+        return options.name_choice
 
     if action == Action.DECODING and options.name_inverter:
-        return options.name_inverter(name)
+        return [options.name_inverter(name)]
 
     if options.name_converter:
-        return options.name_converter(name)
+        return [options.name_converter(name)]
 
-    return name
+    return [name]
