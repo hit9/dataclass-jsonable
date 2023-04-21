@@ -3,12 +3,12 @@ from typing import Dict, List, Optional, Set, Tuple, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from dataclass_jsonable import J, get_field_default_value, json_options
+from dataclass_jsonable import J,zero_value_of_field, json_options
 
 
 @dataclass
 class Base(J):
-    __default_json_options__ = json_options(default_on_missing=get_field_default_value)
+    __default_json_options__ = json_options(default_on_missing=zero_value_of_field)
 
 
 @dataclass
@@ -35,6 +35,7 @@ class C(Base):
     k: dict
     o: Optional[int]
     t: Tuple[int, str]
+    q:Any
     m: Optional[str] = ""
 
 
@@ -64,6 +65,7 @@ def test_default_basic():
         o=0,
         m="",
         t=(),
+        q=None,
     )
     assert C.from_json(d) == c
 

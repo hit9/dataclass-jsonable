@@ -28,7 +28,7 @@ from typing import (
     get_type_hints,
 )
 
-__all__ = ("json_options", "JSONAble", "JSON", "J", "get_field_default_value")
+__all__ = ("json_options", "JSONAble", "JSON", "J", "zero_value_of_field")
 
 # Any value, in short.
 V = Any
@@ -522,54 +522,43 @@ def _util_get_field_keys(
     return [name]
 
 
-def get_field_default_value(f: Field) -> Any:
+def zero_value_of_field(f: Field) -> Any:
     if type(f.default) is not type(MISSING):
         v = f.default
     else:
-        v = get_type_default_value(f.type)
+        v = zero_value_of_type(f.type)
     return v
 
 
-def get_type_default_value(t) -> Any:
+def zero_value_of_type(t) -> Any:
     """
-    Returns the default value for this field by the given type.
-    Raises `NotImplementedError` if given type is not supported.
+    returns the zero value according to the  given type annoation `t`
     """
+    basic_type = {
+        int,
+        float,
+        str,
+        bool,
+        list,
+        dict,
+        set,
+        tuple,
+        Decimal,
+    }
+    if t in basic_type:
+        return t()
+    if _is_generics(t) and _get_generics_origin(t) in basic_type:
+        return _get_generics_origin(t)()
     if t is None:
         return None
-    if t is int:
-        return 0
-    if t is float:
-        return 0.0
-    if t is str:
-        return ""
-    if t is bool:
-        return False
-    if t is list:
-        return []
-    if t is dict:
-        return {}
-    if t is set:
-        return set()
-    if t is tuple:
-        return ()
-    if t is Decimal:
-        return 0
     if t is datetime:
         return 0
     if t is timedelta:
         return 0
-
+    if t is Any:
+        return None
     if _is_jsonable_like(t):
         # Nested
-        return {}
-    if _is_generics(t) and _get_generics_origin(t) is list:
-        return []
-    if _is_generics(t) and _get_generics_origin(t) is set:
-        return set()
-    if _is_generics(t) and _get_generics_origin(t) is tuple:
-        return ()
-    if _is_generics(t) and _get_generics_origin(t) is dict:
         return {}
     if _is_generics(t) and _get_generics_origin(t) is Union:
         # Union[A, B, C, D]
@@ -577,6 +566,6 @@ def get_type_default_value(t) -> Any:
         if len(args) != 2 or args[1] is not type(None):
             raise NotImplementedError("only Optional[X] union type is supported")
         # Optional[E]
-        v = get_type_default_value(args[0])
+        v = zero_value_of_type(args[0])
         return v
     raise NotImplementedError(f"not supported type {t}")
