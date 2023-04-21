@@ -12,10 +12,23 @@ class S1(J):
     d: Tuple[int, ...]
     e: Optional[int] = None
     f: Dict[str, Any] = field(default_factory=dict)
+    g: list[int] = field(default_factory=list)
+    h: set[str] = field(default_factory=set)
+    i: dict[str, int] = field(default_factory=dict)
 
 
 def test_generics_simple():
-    o = S1(a=[1, 2], b={"3"}, c=(1, "a"), d=(5, 6, 7), e=9, f={"1": 2})
+    o = S1(
+        a=[1, 2],
+        b={"3"},
+        c=(1, "a"),
+        d=(5, 6, 7),
+        e=9,
+        f={"1": 2},
+        g=[1, 2],
+        h={"a"},
+        i={"a": 3},
+    )
     x = {
         "a": [1, 2],
         "b": ["3"],
@@ -23,6 +36,9 @@ def test_generics_simple():
         "d": [5, 6, 7],
         "e": 9,
         "f": {"1": 2},
+        "g": [1, 2],
+        "h": ["a"],
+        "i": {"a": 3},
     }
     assert o.json() == x
     assert S1.from_json(x) == o
