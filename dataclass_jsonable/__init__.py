@@ -11,7 +11,7 @@ Supported type annotations:
     JSONAble (nested)
 """
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, Field, MISSING
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -28,7 +28,7 @@ from typing import (
     get_type_hints,
 )
 
-__all__ = ("json_options", "JSONAble", "JSON", "J")
+__all__ = ("json_options", "JSONAble", "JSON", "J", "get_field_default_value")
 
 # Any value, in short.
 V = Any
@@ -376,7 +376,6 @@ class JSONAble:
 
             # Key in dictionary.
             ks = _util_get_field_keys(name, options, Action.DECODING)
-
             if options.skip:
                 continue
 
@@ -394,7 +393,10 @@ class JSONAble:
                 default_on_missing = options.default_on_missing
                 if default_on_missing is not None:
                     # Gives a default value before decoding.
-                    v = default_on_missing
+                    if callable(default_on_missing):
+                        v = default_on_missing(f)
+                    else:
+                        v = default_on_missing
                 else:
                     # Just continue going if the value is missing.
                     # An error like "missing 1 required positional argument" will be raised if this field doesn't
@@ -518,3 +520,63 @@ def _util_get_field_keys(
         return [options.name_converter(name)]
 
     return [name]
+
+
+def get_field_default_value(f: Field) -> Any:
+    if type(f.default) is not type(MISSING):
+        v = f.default
+    else:
+        v = get_type_default_value(f.type)
+    return v
+
+
+def get_type_default_value(t) -> Any:
+    """
+    Returns the default value for this field by the given type.
+    Raises `NotImplementedError` if given type is not supported.
+    """
+    if t is None:
+        return None
+    if t is int:
+        return 0
+    if t is float:
+        return 0.0
+    if t is str:
+        return ""
+    if t is bool:
+        return False
+    if t is list:
+        return []
+    if t is dict:
+        return {}
+    if t is set:
+        return set()
+    if t is tuple:
+        return ()
+    if t is Decimal:
+        return 0
+    if t is datetime:
+        return 0
+    if t is timedelta:
+        return 0
+
+    if _is_jsonable_like(t):
+        # Nested
+        return {}
+    if _is_generics(t) and _get_generics_origin(t) is list:
+        return []
+    if _is_generics(t) and _get_generics_origin(t) is set:
+        return set()
+    if _is_generics(t) and _get_generics_origin(t) is tuple:
+        return ()
+    if _is_generics(t) and _get_generics_origin(t) is dict:
+        return {}
+    if _is_generics(t) and _get_generics_origin(t) is Union:
+        # Union[A, B, C, D]
+        args = _get_generics_args(t)
+        if len(args) != 2 or args[1] is not type(None):
+            raise NotImplementedError("only Optional[X] union type is supported")
+        # Optional[E]
+        v = get_type_default_value(args[0])
+        return v
+    raise NotImplementedError(f"not supported type {t}")
