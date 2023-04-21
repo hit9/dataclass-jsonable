@@ -37,7 +37,9 @@ def test_generics_simple():
     assert S1.from_json(x) == o
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9))
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="list[int] etc supports since python 3.9"
+)
 def test_generics_simple_native() -> None:
     @dataclass
     class S2(J):
