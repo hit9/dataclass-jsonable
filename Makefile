@@ -1,7 +1,7 @@
 lint:
 	black --check dataclass_jsonable
 	isort --profile black --ca --check dataclass_jsonable
-	mypy .
+	mypy dataclass_jsonable
 clean:
 	rm -rf dist build *egg-info
 
