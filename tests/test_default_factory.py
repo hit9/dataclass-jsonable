@@ -90,7 +90,7 @@ class Y(E):
 class X(E):
     a: int
     y: Y
-    z: "M"
+    m: "M"
     b: int = 1
     c: List[str] = field(default_factory=list)
 
@@ -107,4 +107,4 @@ def test_default_overload():
     assert x.c == []
     assert x.y.e == ""
     assert x.y.k == "abc"
-    assert x.z.z == []
+    assert x.m.z == []
