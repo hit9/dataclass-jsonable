@@ -11,7 +11,7 @@ Supported type annotations:
     JSONAble (nested)
 """
 import enum
-from dataclasses import dataclass, Field, MISSING
+from dataclasses import MISSING, Field, dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -96,6 +96,8 @@ class json_options:
     # Default value before decoding, if the key is missing in the dictionary.
     # This option is only decoding.
     # Setting this to None means this option should be ignored.
+    default_before_decoding: Optional[V] = None
+    # Backward compatiable, the same of default_before_decoding.
     default_on_missing: Optional[V] = None
 
     # Custom encoder function, to be called like: encoder(field_value).
@@ -390,13 +392,17 @@ class JSONAble:
 
             if k is None:
                 # Key is missing in dictionary.
-                default_on_missing = options.default_on_missing
-                if default_on_missing is not None:
+                default = (
+                    options.default_before_decoding
+                    if options.default_before_decoding is not None
+                    else options.default_on_missing
+                )
+                if default is not None:
                     # Gives a default value before decoding.
-                    if callable(default_on_missing):
-                        v = default_on_missing(f)
+                    if callable(default):
+                        v = default(f)
                     else:
-                        v = default_on_missing
+                        v = default
                 else:
                     # Just continue going if the value is missing.
                     # An error like "missing 1 required positional argument" will be raised if this field doesn't
