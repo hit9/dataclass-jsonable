@@ -11,7 +11,7 @@ Supported type annotations:
     JSONAble (nested)
 """
 import enum
-from dataclasses import MISSING, Field, dataclass
+from dataclasses import MISSING, dataclass, is_dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -28,7 +28,7 @@ from typing import (
     get_type_hints,
 )
 
-__all__ = ("json_options", "JSONAble", "JSON", "J", "zero_value_of_field")
+__all__ = ("json_options", "JSONAble", "JSON", "J")
 
 # Any value, in short.
 V = Any
@@ -91,6 +91,7 @@ class json_options:
     omitempty_tester: Optional[Tester] = None
 
     # Always skip this field during conversions, defaults to False.
+    # Field the marks to be skipped, will eventually left to a zero value.
     skip: Optional[bool] = False
 
     # Default value before decoding, if the key is missing in the dictionary.
@@ -115,6 +116,58 @@ class json_options:
     before_decoder: Optional[F] = None
 
 
+_BASIC_TYPES = {  # Ensures callable
+    int,
+    float,
+    str,
+    bool,
+    list,
+    dict,
+    set,
+    tuple,
+    Decimal,
+}
+
+
+def zero(t) -> V:
+    """
+    Returns the zero value according to the  given type annoation `t`
+    """
+    if t in _BASIC_TYPES:
+        return t()
+    if t is type(None):
+        return None
+    if t is datetime:
+        return datetime.fromtimestamp(0)
+    if t is timedelta:
+        return timedelta(seconds=0)
+    if t is Any:
+        return None
+    if isinstance(t, type) and issubclass(t, Enum):
+        # pick one or raise
+        return list(t.__members__.values())[0]
+    if _is_generics(t):
+        # Generics like `list[int]`, recursively deep its original type to zero
+        ot = _get_generics_origin(t)
+        args = _get_generics_args(t)
+
+        if ot is Union:
+            # Not support Union[X, Y, Z, ...]
+            if len(args) != 2 or args[1] is not type(None):
+                raise NotImplementedError("only Optional[X] union type is supported")
+            # Optional[E]
+            return None
+
+        return zero(ot)
+    if isinstance(t, type) and issubclass(t, J):
+        # J
+        return t.from_json({})  # type: ignore
+    if is_dataclass(t):
+        # dataclasses
+        return t()
+    raise NotImplementedError(f"not supported type {t}")
+
+
 @dataclass
 class JSONAble:
     """Base of jsonable dataclass."""
@@ -129,6 +182,23 @@ class JSONAble:
     # field-level json_options. For each option, we first checkout it in the field-level
     # json_options (if declared), and then in the class-level `__default_json_options__`.
     __default_json_options__ = json_options()
+
+    # Class level `default_factory` option.
+    #
+    # During a `from_json` calling, if a field's key is missing in the given dictionary,
+    # and at the same time there's no default value or default_factory declared for this field,
+    # and `default_before_decoding` option is neither used, then a "missing positional argument"
+    # TypeError will finally raise.
+    #
+    # The standard dataclasses library provides field-level field keyword `default` and `default_factory` to
+    # prevent this error. Here dataclasses-jsonable provides a class-level `default_factory`. Which is invoked
+    # only if the field has no `default` value or `default_factory` function declared. In another say, the
+    # field-level default and default_factory can overide this class-level `__default_factory__`.
+    #
+    # The default `__default_factory__` is function `zero`, which gives a zero value according to the field's
+    # type.
+    # Setting this to `None` to disable this option.
+    __default_factory__ = zero
 
     def _get_origin_json(self) -> JSON:
         """Debug purpose method to return the original JSON dictionary which constructs this instance via
@@ -246,7 +316,7 @@ class JSONAble:
             return t
         elif _is_jsonable_like(t):
             # Nested
-            return lambda x: t.from_json(x)
+            return lambda x: t.from_json(x)  # type: ignore
         elif _is_generics(t) and _get_generics_origin(t) is list:
             # List[E]
             args = _get_generics_args(t)
@@ -399,10 +469,7 @@ class JSONAble:
                 )
                 if default is not None:
                     # Gives a default value before decoding.
-                    if callable(default):
-                        v = default(f)
-                    else:
-                        v = default
+                    v = default
                 else:
                     # Just continue going if the value is missing.
                     # An error like "missing 1 required positional argument" will be raised if this field doesn't
@@ -425,6 +492,14 @@ class JSONAble:
             # Obtain the decoder function.
             decoder = options.decoder or cls.get_decoder(t)
             kwds[name] = decoder(v)
+
+        # Sets default value.
+        if cls.__default_factory__ is not None:
+            for name, f in cls.__dataclass_fields__.items():
+                if f.default is MISSING and f.default_factory is MISSING:
+                    # No default value and default_factory set.
+                    t = cls._get_typing_hint_by_field(f)
+                    kwds.setdefault(name, cls.__default_factory__(t))
 
         inst = cls(**kwds)
         setattr(inst, "__dataclass_origin_json__", d)
@@ -526,52 +601,3 @@ def _util_get_field_keys(
         return [options.name_converter(name)]
 
     return [name]
-
-
-def zero_value_of_field(f: Field) -> Any:
-    if type(f.default) is not type(MISSING):
-        v = f.default
-    else:
-        v = zero_value_of_type(f.type)
-    return v
-
-
-def zero_value_of_type(t) -> Any:
-    """
-    returns the zero value according to the  given type annoation `t`
-    """
-    basic_type = {
-        int,
-        float,
-        str,
-        bool,
-        list,
-        dict,
-        set,
-        tuple,
-        Decimal,
-    }
-    if t in basic_type:
-        return t()
-    if _is_generics(t) and _get_generics_origin(t) in basic_type:
-        return _get_generics_origin(t)()
-    if t is None:
-        return None
-    if t is datetime:
-        return 0
-    if t is timedelta:
-        return 0
-    if t is Any:
-        return None
-    if _is_jsonable_like(t):
-        # Nested
-        return {}
-    if _is_generics(t) and _get_generics_origin(t) is Union:
-        # Union[A, B, C, D]
-        args = _get_generics_args(t)
-        if len(args) != 2 or args[1] is not type(None):
-            raise NotImplementedError("only Optional[X] union type is supported")
-        # Optional[E]
-        v = zero_value_of_type(args[0])
-        return v
-    raise NotImplementedError(f"not supported type {t}")

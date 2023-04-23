@@ -1,28 +1,23 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-from dataclass_jsonable import J,zero_value_of_field, json_options
-
-
-@dataclass
-class Base(J):
-    __default_json_options__ = json_options(default_on_missing=zero_value_of_field)
+from dataclass_jsonable import J
 
 
 @dataclass
-class A(Base):
+class A(J):
     a: int
 
 
 @dataclass
-class B(Base):
+class B(J):
     a: A
 
 
 @dataclass
-class C(Base):
+class C(J):
     a: int
     b: str
     c: bool
@@ -35,12 +30,12 @@ class C(Base):
     k: dict
     o: Optional[int]
     t: Tuple[int, str]
-    q:Any
+    q: Any
     m: Optional[str] = ""
 
 
 @dataclass
-class S1(Base):
+class S1(J):
     a: List[int]
     b: Set[str]
     c: Tuple[int, str]
@@ -49,7 +44,7 @@ class S1(Base):
     f: Dict[str, Any] = field(default_factory=dict)
 
 
-def test_default_basic():
+def test_default_factory_basic():
     d = {}
     c = C(
         a=0,
@@ -62,19 +57,19 @@ def test_default_basic():
         h=timedelta(days=0),
         i=set(),
         k={},
-        o=0,
+        o=None,
         m="",
-        t=(),
+        t=(),  # type: ignore
         q=None,
     )
     assert C.from_json(d) == c
 
 
-def test_default_nested():
+def test_default_factory_nested():
     d = {}
     assert B.from_json(d) == B(a=A(a=0))
 
 
-def test_default_generics():
+def test_default_factory_generics():
     d = {}
     assert S1.from_json(d) == S1(a=[], b=set(), c=(), d=(), e=None, f={})

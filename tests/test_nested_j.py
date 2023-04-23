@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from dataclass_jsonable import J
@@ -53,7 +53,7 @@ def test_nested_j_simple():
 
 @dataclass
 class JsonLike:  # Not extend from J
-    parts: List[str]
+    parts: List[str] = field(default_factory=list)
 
     @classmethod
     def from_json(cls, d: str) -> "JsonLike":
