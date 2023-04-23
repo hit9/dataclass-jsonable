@@ -293,14 +293,14 @@ An example list about `json_options`:
       attr: List[str] = field(default_factory=list, metadata={"j": json_options(**kwds)})
   ```
 
-  There's also an option `default_on_missing` in dataclass-jsonable,
+  There's also an option `default_before_decoding` in dataclass-jsonable,
   which specifics a default value before decoding if the key is missing in the dictionary.
   Sometimes this way is more concise:
 
   ```python
   @dataclass
   class Obj(J):
-      updated_at: datetime = field(metadata={"j": json_options(default_on_missing=0)})
+      updated_at: datetime = field(metadata={"j": json_options(default_before_decoding=0)})
 
   Obj.from_json({})  # => Obj(updated_at=datetime.datetime(1970, 1, 1, 8, 0))
   ```
