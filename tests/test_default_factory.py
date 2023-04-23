@@ -3,21 +3,26 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from dataclass_jsonable import J
+from dataclass_jsonable import J, zero
 
 
 @dataclass
-class A(J):
+class E(J):
+    __default_factory__ = zero
+
+
+@dataclass
+class A(E):
     a: int
 
 
 @dataclass
-class B(J):
+class B(E):
     a: A
 
 
 @dataclass
-class C(J):
+class C(E):
     a: int
     b: str
     c: bool
@@ -35,7 +40,7 @@ class C(J):
 
 
 @dataclass
-class S1(J):
+class S1(E):
     a: List[int]
     b: Set[str]
     c: Tuple[int, str]
@@ -73,3 +78,33 @@ def test_default_factory_nested():
 def test_default_factory_generics():
     d = {}
     assert S1.from_json(d) == S1(a=[], b=set(), c=(), d=(), e=None, f={})
+
+
+@dataclass
+class Y(E):
+    e: str
+    k: str = "abc"
+
+
+@dataclass
+class X(E):
+    a: int
+    y: Y
+    z: "M"
+    b: int = 1
+    c: List[str] = field(default_factory=list)
+
+
+@dataclass
+class M(E):
+    z: List[Y]
+
+
+def test_default_overload():
+    x = X.from_json({})
+    assert x.a == 0
+    assert x.b == 1
+    assert x.c == []
+    assert x.y.e == ""
+    assert x.y.k == "abc"
+    assert x.z.z == []

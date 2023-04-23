@@ -19,6 +19,7 @@ from types import MappingProxyType
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     List,
     Optional,
@@ -28,7 +29,7 @@ from typing import (
     get_type_hints,
 )
 
-__all__ = ("json_options", "JSONAble", "JSON", "J")
+__all__ = ("json_options", "JSONAble", "JSON", "J", "zero")
 
 # Any value, in short.
 V = Any
@@ -48,6 +49,12 @@ JSON = Dict[str, V]
 
 # Function that converts a field's name.
 NameConverter = Callable[[str], str]
+
+# TypingHint
+TypingHint = Any
+
+# Function that gives a default value according to a typing hint.
+DefaultFactory = Callable[[TypingHint], V]
 
 
 class Action(enum.IntEnum):
@@ -198,7 +205,7 @@ class JSONAble:
     # The default `__default_factory__` is function `zero`, which gives a zero value according to the field's
     # type.
     # Setting this to `None` to disable this option.
-    __default_factory__ = zero
+    __default_factory__: ClassVar[Optional[DefaultFactory]] = None
 
     def _get_origin_json(self) -> JSON:
         """Debug purpose method to return the original JSON dictionary which constructs this instance via
@@ -404,6 +411,10 @@ class JSONAble:
         __name_choice_map = getattr(self, "__name_choice_map", None)
         for name, f in self.__dataclass_fields__.items():
             t = self._get_typing_hint_by_field(f)
+            if _is_class_var(t):
+                # ClassVar should be skipped.
+                continue
+
             v = getattr(self, name)  # Field's value
             options = self._get_json_options(f)
 
@@ -443,6 +454,9 @@ class JSONAble:
 
         for name, f in cls.__dataclass_fields__.items():
             t = cls._get_typing_hint_by_field(f)
+            if _is_class_var(t):
+                # ClassVar should be skipped.
+                continue
 
             options = cls._get_json_options(f)
 
@@ -499,6 +513,9 @@ class JSONAble:
                 if f.default is MISSING and f.default_factory is MISSING:
                     # No default value and default_factory set.
                     t = cls._get_typing_hint_by_field(f)
+                    if _is_class_var(t):
+                        # ClassVar should be skipped.
+                        continue
                     kwds.setdefault(name, cls.__default_factory__(t))
 
         inst = cls(**kwds)
@@ -570,6 +587,14 @@ def _replace_mapping_proxy(m: MappingProxyType, kwds) -> MappingProxyType:
     d = dict(m)
     d.update(**kwds)
     return MappingProxyType(d)
+
+
+def _is_class_var(t) -> bool:
+    if t is ClassVar:
+        return True
+    if _is_generics(t) and _get_generics_origin(t) is ClassVar:
+        return True
+    return False
 
 
 def _util_get_field_keys(
