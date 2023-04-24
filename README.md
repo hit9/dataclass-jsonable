@@ -305,6 +305,25 @@ An example list about `json_options`:
   Obj.from_json({})  # => Obj(updated_at=datetime.datetime(1970, 1, 1, 8, 0))
   ```
 
+  dataclass-jsonable also introduces a class-level similar option `__default_factory__`.
+  If a field has no `default` or `default_factory` declared, and has no `default_before_decoding` option used,
+  this function will generate a default value according to its type, to prevent a
+  "missing positional arguments" TypeError from rasing.
+
+  ```python
+  from dataclass_jsonable import J, zero
+
+  @dataclass
+  class Obj(J):
+      __default_factory__ = zero
+
+      n: int
+      s: str
+      k: List[str]
+
+  Obj.from_json({})  # => Obj(n=0, s='', k=[])
+  ```
+
 * Override the default encoders and decoders.
 
   This way, you have complete control over how to encode and decode at field level.
