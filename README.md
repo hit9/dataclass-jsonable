@@ -308,7 +308,7 @@ An example list about `json_options`:
   dataclass-jsonable also introduces a class-level similar option `__default_factory__`.
   If a field has no `default` or `default_factory` declared, and has no `default_before_decoding` option used,
   this function will generate a default value according to its type, to prevent a
-  "missing positional arguments" TypeError from rasing.
+  "missing positional arguments" TypeError from raising.
 
   ```python
   from dataclass_jsonable import J, zero
