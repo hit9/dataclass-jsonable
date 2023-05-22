@@ -3,31 +3,28 @@
 [![dataclass-jsonable ci](https://github.com/hit9/dataclass-jsonable/actions/workflows/ci.yml/badge.svg)](https://github.com/hit9/dataclass-jsonable/actions/workflows/ci.yml)
 ![](https://img.shields.io/badge/license-BSD3-brightgreen)
 
-[中文说明](README.zh.md)
+dataclass-jsonable 是简单灵活的、在 dataclass 和 可 JSON 化字典转换的 Python 库。
 
-Simple and flexible conversions between dataclasses and jsonable dictionaries.
+它将 dataclasses 映射到可 JSON 编码的字典，而不是 JSON 字符串。
 
-It maps dataclasses to jsonable dictionaries but not json strings.
+## 特点
 
+* 好用
+* 支持大部分常见类型标注
+* 支持递归转换
+* 支持字段级别和 dataclass 级别的行为重载
 
-## Features
+## 安装
 
-* Easy to use.
-* Supports common type annotations.
-* Supports recursive conversions.
-* Supports field-level and dataclass-level overriding.
+要求 Python >= 3.7
 
-## Installation
-
-Requirements: Python >= 3.7
-
-Install via `pip`:
+通过 `pip` 安装:
 
 ```
 pip install dataclass-jsonable
 ```
 
-## Quick Example
+## 快速示例
 
 ```python
 from dataclasses import dataclass
@@ -54,19 +51,19 @@ class Box(J):
 
 box = Box(pens=[Pen(color=Color.BLUE, price=Decimal("20.1"), produced_at=datetime.now())])
 
-# Encode to a jsonable dictionary.
+# 编码到 json 字典
 d = box.json()
 print(d)  # {'pens': [{'color': 1, 'price': '20.1', 'produced_at': 1660023062}]}
 
-# Construct dataclass from a jsonable dictionary.
+# 从 json 字典构造一个 dataclass
 print(Box.from_json(d))
 ```
 
-APIs are only the two: `.json()` and `.from_json()`.
+API 只有两个: `.json()` and `.from_json()`.
 
-## Built-in Supported Types
+## 内置支持的类型
 
-* `bool`, `int`, `float`, `str`, `None` encoded as it is.
+* `bool`, `int`, `float`, `str`, `None` 的转换不变.
 
   ```python
   @dataclass
@@ -80,7 +77,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   # => {'a': 1, 'b': 'b', 'c': True, 'd': None}
   ```
 
-* `Decimal` encoded to `str`.
+* `Decimal` 编码到 `str`.
 
   ```python
   @dataclass
@@ -90,8 +87,8 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj(a=Decimal("3.1")).json()  # => {'a': '3.1'}
   ```
 
-* `datetime` encoded to timestamp integer via `.timestamp()` method.
-  `timedelta` encoded to integer via `.total_seconds()` method.
+* `datetime` 通过 `.timestamp()` 方法编码到时间戳整数.
+  `timedelta` 通过 `.total_seconds()` 方法编码到整数.
 
   ```python
   @dataclass
@@ -103,7 +100,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   # => {'a': 1660062019, 'b': 60}
   ```
 
-* `Enum` and `IntEnum` encoded to their values via `.value` attribute.
+* `Enum` 和 `IntEnum` 通过 `.value` 属性编码到枚举值:
 
   ```python
   @dataclass
@@ -113,7 +110,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj(status=Status.DONE).json()  # => {'status': 1}
   ```
 
-* `Any` is encoded according to its `type`.
+* `Any` 根据自身类型编码:
 
   ```python
   @dataclass
@@ -125,7 +122,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj.from_json({"a": 1})  # Obj(a=1)
   ```
 
-* `Optional[X]` is supported, but `Union[X, Y, ...]` is not.
+* `Optional[X]` 是支持的, 但是一般的 `Union[X, Y, ...]` 不被支持:
 
   ```python
   @dataclass
@@ -135,7 +132,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj(a=1).json()  # => {'a': 1}
   ```
 
-* `List[X]`, `Tuple[X]`, `Set[X]` are all encoded to `list`.
+* `List[X]`, `Tuple[X]`, `Set[X]` 将全部映射到 `list`:
 
   ```python
   @dataclass
@@ -152,7 +149,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   # => Obj(a=[1], b={2, 3}, c=(4, '5'), d=(7, 8, 9))
   ```
 
-* `Dict[str, X]` encoded to `dict`.
+* `Dict[str, X]` 映射到 `dict`:
 
   ```python
   @dataclass
@@ -162,7 +159,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj.from_json({"a": {"x": 1}}) # => Obj(a={'x': 1})
   ```
 
-* Nested or recursively `JSONAble` (or `J`) dataclasses.
+* 嵌套的 `JSONAble` (或者叫 `J`) dataclasses:
 
   ```python
   @dataclass
@@ -177,7 +174,7 @@ APIs are only the two: `.json()` and `.from_json()`.
   Obj.from_json({"a": [{"k": "v"}]})  # Obj(a=[Elem(k='v')])
   ```
 
-* Postponed annotations (the `ForwardRef` in [PEP 563](https://www.python.org/dev/peps/pep-0563/)).
+* 后置定义的字符串类型注解 ([PEP 563](https://www.python.org/dev/peps/pep-0563/) 中的 `ForwardRef`).
 
   ```python
   @dataclass
@@ -191,17 +188,14 @@ APIs are only the two: `.json()` and `.from_json()`.
   # {'name': 'root', 'left': {'name': 'left', 'left': None, 'right': None}, 'right': {'name': 'right', 'left': None, 'right': None}}
   ```
 
-If these built-in default conversion behaviors do not meet your needs,
-or your type is not on the list,
-you can use [json_options](#customization--overriding-examples) introduced below to customize it.
+如果这些内置的默认转换规则无法满足需求，或者你的类型不在其中，你仍然可以采用 [json_options](#customization--overriding-examples)  来自定义转换规则。
 
-## Customization / Overriding Examples
+## 自定义 / 重载 示例
 
-We can override the default conversion behaviors with `json_options`,
-which uses the dataclass field's metadata for field-level customization purpose,
-and the namespace is `j`.
+我们可以通过 `json_options` 来重载默认的转换行为，它通过 dataclass 的 metadata 来支持字段级别的自定义目的，
+其命名空间是 `j`.
 
-The following pseudo code gives the pattern:
+以下的伪代码以说明模式:
 
 ```python
 from dataclasses import field
@@ -212,9 +206,9 @@ class Struct(J):
     attr: T = field(metadata={"j": json_options(**kwds)})
 ```
 
-An example list about `json_options`:
+一些使用 `json_options` 的示例:
 
-* Specific a custom dictionary key over the default field's name:
+* 采用一个自定义的字典键，而不是默认的字段名:
 
    ```python
    @dataclass
@@ -223,8 +217,8 @@ An example list about `json_options`:
    Person(attr="value").json() # => {"new_attr": "value"}
    ```
 
-  And more, we can use a function to specific a custom dictionary key.
-  This may be convenient to work with class-level `__default_json_options__` attribute (check it below).
+  而且，我们甚至可以用一个函数来自定义这个字典键。
+  在和 class 级别的 `__default_json_options__` 属性一起时，会很有用 (后续会讲到).
 
   ```python
   @dataclass
@@ -233,7 +227,7 @@ An example list about `json_options`:
   Obj(simple_value=1).json()  # => {"simpleValue": 1}
   ```
 
-  And we may specific a custom field name converter when converts dictionary to dataclass:
+  我们也可以指明自定义的命名转换器, 从字典到 dataclass, 或者反过来:
 
   ```python
   @dataclass
@@ -248,9 +242,9 @@ An example list about `json_options`:
     )
   ```
 
-  As the `Person` defined above, it will convert to dictionary like `{"Name": "Jack"}` and can be loaded from `{"nickname": "Jack"}`.
+  比如上面的 `Person` class, 转换到字典可以是 `{"Name": "Jack"}`, 可以从 `{"nickname": "Jack"}` 构造而来。
 
-* Omit a field if its value is empty:
+* 如果一个字段的值是空的，那么在转换时忽略它:
 
    ```python
    @dataclass
@@ -259,7 +253,7 @@ An example list about `json_options`:
    Book(name="").json() # => {}
    ```
 
-  Further, we can specify what is 'empty' via option `omitempty_tester`:
+  进一步地，我们可以定义什么叫做 '空的', 通过设置  `omitempty_tester`:
 
    ```python
    @dataclass
@@ -267,7 +261,7 @@ An example list about `json_options`:
        attr: Optional[str] = field(
            default=None,
            metadata={
-               # By default, we test `empty` using `not x`.
+               # 默认地，我们测试 `空` 是通过 `not x`
                "j": json_options(omitempty=True, omitempty_tester=lambda x: x is None)
            },
        )
@@ -276,7 +270,7 @@ An example list about `json_options`:
    Book(attr=None).json()  # => {}
    ```
 
-* Always skip a field. So we can stop some "private" fields from exporting:
+* 总是跳过一个字段. 这样我们可以忽略一些 "私有" 字段转换到 JSON:
 
    ```python
    @dataclass
@@ -286,8 +280,7 @@ An example list about `json_options`:
    Obj(attr="private").json() # => {}
    ```
 
-* dataclasses's `field` allows us to pass a `default` or `default_factory` argument to
-  set a default value:
+* dataclasses 的 `field` 允许我们传入 `default` 或者 `default_factory` 参数来设置默认字段值:
 
   ```python
   @dataclass
@@ -295,9 +288,8 @@ An example list about `json_options`:
       attr: List[str] = field(default_factory=list, metadata={"j": json_options(**kwds)})
   ```
 
-  There's also an option `default_before_decoding` in dataclass-jsonable,
-  which specifics a default value before decoding if the key is missing in the dictionary.
-  Sometimes this way is more concise:
+  dataclass-jsonable 提供了一个类似的选项叫做 `default_before_decoding`.
+  在解码前，如果一个字段的字典键是缺失的，它可以指明默认值用什么。有时候这种方式指明默认值更简洁:
 
   ```python
   @dataclass
@@ -307,16 +299,16 @@ An example list about `json_options`:
   Obj.from_json({})  # => Obj(updated_at=datetime.datetime(1970, 1, 1, 8, 0))
   ```
 
-  dataclass-jsonable also introduces a class-level similar option `__default_factory__`.
-  If a field has no `default` or `default_factory` declared, and has no `default_before_decoding` option used,
-  this function will generate a default value according to its type, to prevent a
-  "missing positional arguments" TypeError from raising.
+  dataclass-jsonable 也有一个 class 级别的选项叫做 `__default_factory__`.
+  如果一个字段没有定义 `default` 或者 `default_factory` 参数, 也没有使用 `default_before_decoding` 选项,
+  这个函数就会根据字段的类型给它生成一个默认值, 来防止在构造实例时出现 "missing positional arguments" 之类的错误:
 
   ```python
   from dataclass_jsonable import J, zero
 
   @dataclass
   class Obj(J):
+      # 默认都采用零值
       __default_factory__ = zero
 
       n: int
@@ -326,9 +318,9 @@ An example list about `json_options`:
   Obj.from_json({})  # => Obj(n=0, s='', k=[])
   ```
 
-* Override the default encoders and decoders.
+* 重载默认的编码和解码函数
 
-  This way, you have complete control over how to encode and decode at field level.
+  如此，对于如何编解码的转换函数，你可以完全掌控:
 
   ```python
   @dataclass
@@ -346,8 +338,7 @@ An example list about `json_options`:
   Obj.from_json({"elems": "a,b,c"})  # => Obj(elems=['a', 'b', 'c'])
   ```
 
-  The following code snippet about `datetime` is a very common example,
-  you might want ISO format datetime conversion over timestamp integers.
+  下面的关于 `datetime` 的代码示例采用 ISO 格式而非默认的时间戳:
 
   ```python
   @dataclass
@@ -365,9 +356,8 @@ An example list about `json_options`:
   Record().json()  # => {'created_at': '2022-08-09T23:23:02.543007'}
   ```
 
-* For some very narrow scenarios, we may need to execute a hook function before decoding,
-  for example, the data to be decoded is a serialized json string,
-  and but we still want to use the built-in decoder functions instead of making a new decoder.
+* 对于一些非常少见的场景，我们需要在解码前执行一些动作，比如，一些要解码的数据是序列化的 json 字符串，
+  但是我们仍然希望沿用默认的解码函数而不想自己写一个解码函数，比如说：
 
   ```python
   import json
@@ -380,10 +370,9 @@ An example list about `json_options`:
   # => Obj(data={'k': 'v'})
   ```
 
-* Customize default behaviors at the class level.
+* 自定义类级别的 `json_options` 选项.
 
-  If an option is not explicitly set at the field level,
-  the `__default_json_options__` provided at the class level will be attempted.
+  如果一个字段没有明确设置字段级别的 `json_options` 选项，就会降级采用这个类上的 `json_options`.
 
   ````python
   @dataclass
@@ -410,8 +399,8 @@ An example list about `json_options`:
 
 ## Debuging
 
-It provides a method `obj._get_origin_json()`,
-it returns the original json dictionary which constructs instance `obj` via `from_json()`.
+每一个由 dataclass-jsonable 构造而来的 dataclass 实例，都有个方法 `obj._get_origin_json()`,
+它返回通过 `from_json()` 构造这个实例的原始的 json 字典。
 
 ```python
 d = {"a": 1}
