@@ -356,6 +356,25 @@ class Struct(J):
   Record().json()  # => {'created_at': '2022-08-09T23:23:02.543007'}
   ```
 
+  dataclass-jsonable v0.1.1 之后给 `encoder` 和 `decoder` 添加了更容易理解的别名:
+  `to_json` 和 `from_json`.
+
+  ```python
+  @dataclass
+  class Obj(J):
+      elems: List[str] = field(
+          metadata={
+              "j": json_options(
+                  to_json=lambda x: ",".join(x),  # Alias for encoder
+                  from_json=lambda x: x.split(","),  # Alias for decoder
+              )
+          }
+      )
+
+  Obj(elems=["a", "b", "c"]).json()  # => {'elems': 'a,b,c'}
+  Obj.from_json({"elems": "a,b,c"})  # => Obj(elems=['a', 'b', 'c'])
+  ```
+
 * 对于一些非常少见的场景，我们需要在解码前执行一些动作，比如，一些要解码的数据是序列化的 json 字符串，
   但是我们仍然希望沿用默认的解码函数而不想自己写一个解码函数，比如说：
 

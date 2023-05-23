@@ -26,6 +26,25 @@ def test_option_endecoder_simple():
 
 
 @dataclass
+class Obj1(J):
+    elems: List[str] = field(
+        metadata={
+            "j": json_options(
+                to_json=lambda x: ",".join(x),
+                from_json=lambda x: x.split(","),
+            )
+        }
+    )
+
+
+def test_option_endecoder_alias():
+    o = Obj1(elems=["a", "b", "c"])
+    x = {"elems": "a,b,c"}
+    assert o.json() == x
+    assert Obj1.from_json(x) == o
+
+
+@dataclass
 class Record(J):
     created_at: datetime = field(
         default_factory=datetime.now,

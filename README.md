@@ -365,6 +365,25 @@ An example list about `json_options`:
   Record().json()  # => {'created_at': '2022-08-09T23:23:02.543007'}
   ```
 
+  dataclass-jsonable gives `encoder` and `decoder` better alias names since 0.1.1:
+  `to_json` and `from_json`.
+
+  ```python
+  @dataclass
+  class Obj(J):
+      elems: List[str] = field(
+          metadata={
+              "j": json_options(
+                  to_json=lambda x: ",".join(x),  # Alias for encoder
+                  from_json=lambda x: x.split(","),  # Alias for decoder
+              )
+          }
+      )
+
+  Obj(elems=["a", "b", "c"]).json()  # => {'elems': 'a,b,c'}
+  Obj.from_json({"elems": "a,b,c"})  # => Obj(elems=['a', 'b', 'c'])
+  ```
+
 * For some very narrow scenarios, we may need to execute a hook function before decoding,
   for example, the data to be decoded is a serialized json string,
   and but we still want to use the built-in decoder functions instead of making a new decoder.

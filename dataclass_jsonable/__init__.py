@@ -62,7 +62,7 @@ class Action(enum.IntEnum):
     DECODING = 2
 
 
-@dataclass(frozen=True)
+@dataclass
 class json_options:
     """Field-level options to override the default conversion behavior.
     For each option, leaving `None` means not-set.
@@ -111,16 +111,29 @@ class json_options:
     # Custom encoder function, to be called like: encoder(field_value).
     # Uses `get_encoder` to get the default encoder function by annotated type.
     encoder: Optional[F] = None
+    # Alias name for `encoder` option.
+    to_json: Optional[F] = None
 
-    # Custom encoder function, to be called like: decoder(dict_value).
+    # Custom decoder function, to be called like: decoder(dict_value).
     # Uses `get_decoder` to get the default decoder function by annotated type.
     decoder: Optional[F] = None
+    # Alias name for `decoder` option.
+    from_json: Optional[F] = None
 
     # Hook function to be executed before decoder's execution.
     # The decoding looks like `before_decoder(decoder(dict_value))` if this option is set.
     # Although this feature can be achieved by a new `decoder` function, but it's more
     # convenient to work with the builtin decoder functions.
     before_decoder: Optional[F] = None
+
+    def __post_init__(self):
+        # Handle alias options
+        if self.encoder is None:
+            self.encoder = self.to_json
+        if self.decoder is None:
+            self.decoder = self.from_json
+        if self.default_before_decoding is None:
+            self.default_before_decoding = self.default_on_missing
 
 
 _BASIC_TYPES = {  # Ensures callable
@@ -476,11 +489,7 @@ class JSONAble:
 
             if k is None:
                 # Key is missing in dictionary.
-                default = (
-                    options.default_before_decoding
-                    if options.default_before_decoding is not None
-                    else options.default_on_missing
-                )
+                default = options.default_before_decoding
                 if default is not None:
                     # Gives a default value before decoding.
                     v = default
