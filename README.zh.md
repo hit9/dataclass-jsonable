@@ -280,6 +280,16 @@ class Struct(J):
    Obj(attr="private").json() # => {}
    ```
 
+* 总是保留一个字段原样不动, 这也可以避免应用一些内置的 `encode/decoder`:
+
+   ```python
+   @dataclass
+   class Obj(J):
+       timestamp: datetime = field(metadata={"j": json_options(keep=True)})
+
+   Obj(timestamp=datetime.now()).json() # =>  {'timestamp': datetime.datetime(2023, 9, 5, 14, 54, 24, 679103)}
+   ```
+
 * dataclasses 的 `field` 允许我们传入 `default` 或者 `default_factory` 参数来设置默认字段值:
 
   ```python

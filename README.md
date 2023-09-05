@@ -286,6 +286,16 @@ An example list about `json_options`:
    Obj(attr="private").json() # => {}
    ```
 
+* Always keep a field without encoding nor decoding, this prevents the default encoding/decoding behavior:
+
+   ```python
+   @dataclass
+   class Obj(J):
+       timestamp: datetime = field(metadata={"j": json_options(keep=True)})
+
+   Obj(timestamp=datetime.now()).json() # =>  {'timestamp': datetime.datetime(2023, 9, 5, 14, 54, 24, 679103)}
+   ```
+
 * dataclasses's `field` allows us to pass a `default` or `default_factory` argument to
   set a default value:
 
