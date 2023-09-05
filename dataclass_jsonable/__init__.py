@@ -101,6 +101,10 @@ class json_options:
     # Field the marks to be skipped, will eventually left to a zero value.
     skip: Optional[bool] = False
 
+    # Keep the value of this field as it is during encoding and decoding.
+    # This is equivalent to both setting encoder and decoder to lambda x: x.
+    keep: Optional[bool] = False
+
     # Default value before decoding, if the key is missing in the dictionary.
     # This option is only decoding.
     # Setting this to None means this option should be ignored.
@@ -121,9 +125,9 @@ class json_options:
     from_json: Optional[F] = None
 
     # Hook function to be executed before decoder's execution.
-    # The decoding looks like `before_decoder(decoder(dict_value))` if this option is set.
-    # Although this feature can be achieved by a new `decoder` function, but it's more
-    # convenient to work with the builtin decoder functions.
+    # The decoding looks like `before_decoder(decoder(dict_value))` if this option
+    # is set. Although this feature can be achieved by a new `decoder` function,
+    # but it's more convenient to work with the builtin decoder functions.
     before_decoder: Optional[F] = None
 
     def __post_init__(self):
@@ -200,29 +204,30 @@ class JSONAble:
     #
     # Further, we can still override class-level `__default_json_options__` options by
     # field-level json_options. For each option, we first checkout it in the field-level
-    # json_options (if declared), and then in the class-level `__default_json_options__`.
+    # json_options (if declared), and then in the class-level
+    # `__default_json_options__`.
     __default_json_options__ = json_options()
 
     # Class level `default_factory` option.
     #
     # During a `from_json` calling, if a field's key is missing in the given dictionary,
-    # and at the same time there's no default value or default_factory declared for this field,
-    # and `default_before_decoding` option is neither used, then a "missing positional argument"
-    # TypeError will finally raise.
+    # and at the same time there's no default value or default_factory declared for this
+    # field, and `default_before_decoding` option is neither used, then a
+    # "missing positional argument" TypeError will finally raise.
     #
-    # The standard dataclasses library provides field-level field keyword `default` and `default_factory` to
-    # prevent this error. Here dataclasses-jsonable provides a class-level `default_factory`. Which is invoked
-    # only if the field has no `default` value or `default_factory` function declared. In another say, the
-    # field-level default and default_factory can overide this class-level `__default_factory__`.
-    #
-    # The default `__default_factory__` is function `zero`, which gives a zero value according to the field's
-    # type.
-    # Setting this to `None` to disable this option.
+    # The standard dataclasses library provides field-level field keyword `default`
+    # and `default_factory` to prevent this error. Here dataclasses-jsonable provides
+    # a class-level `default_factory`. Which is invoked only if the field has no
+    # `default` value or `default_factory` function declared. In another say, the
+    # field-level default and default_factory can overide this class-level
+    # `__default_factory__`. The default `__default_factory__` is function `zero`,
+    # which gives a zero value according to the field's type. Setting this to `None`
+    # to disable this option.
     __default_factory__: ClassVar[Optional[DefaultFactory]] = None
 
     def _get_origin_json(self) -> JSON:
-        """Debug purpose method to return the original JSON dictionary which constructs this instance via
-        `from_json` method.
+        """Debug purpose method to return the original JSON dictionary which constructs
+        this instance via `from_json` method.
         """
         return getattr(self, "__dataclass_origin_json__")
 
@@ -375,10 +380,11 @@ class JSONAble:
 
     @classmethod
     def _get_json_options(cls, f) -> json_options:
-        """Internal method to help to get the right json_options to use for given field `f`.
-        For each field, we firstly checkout field-level json_options, if declared. And then
-        the class-level json_options.
-        The result will be cached in this field's metadata as key `_dataclass_jsonable_j`.
+        """Internal method to help to get the right json_options to use for given
+        field `f`. For each field, we firstly checkout field-level json_options,
+        if declared. And then the class-level json_options.
+        The result will be cached in this field's metadata as key
+        `_dataclass_jsonable_j`.
         """
         k = "_dataclass_jsonable_j"
 
@@ -448,8 +454,11 @@ class JSONAble:
             )[0]
 
             # Encode.
-            encoder = options.encoder or self.get_encoder(t)
-            d[k] = encoder(v)
+            if options.keep:
+                d[k] = v
+            else:
+                encoder = options.encoder or self.get_encoder(t)
+                d[k] = encoder(v)
 
         return d
 
@@ -495,8 +504,8 @@ class JSONAble:
                     v = default
                 else:
                     # Just continue going if the value is missing.
-                    # An error like "missing 1 required positional argument" will be raised if this field doesn't
-                    # have a default value declared.
+                    # An error like "missing 1 required positional argument" will be
+                    # raised if this field doesn't have a default value declared.
                     continue
             else:
                 # Value in dictionary `d`.
@@ -513,8 +522,11 @@ class JSONAble:
                 v = options.before_decoder(v)
 
             # Obtain the decoder function.
-            decoder = options.decoder or cls.get_decoder(t)
-            kwds[name] = decoder(v)
+            if options.keep:
+                kwds[name] = v
+            else:
+                decoder = options.decoder or cls.get_decoder(t)
+                kwds[name] = decoder(v)
 
         # Sets default value.
         if cls.__default_factory__ is not None:
@@ -538,17 +550,17 @@ J = JSONAble  # short alias
 
 # Makes some encoder/decoder function be static.
 
-_encode_datetime = lambda x: int(x.timestamp())
-_encode_timedelta = lambda x: int(x.total_seconds())
-_encode_enum = lambda x: x.value
-_encode_None = lambda _: None
-_encode_jsonable = lambda x: x.json()
-_decode_datetime = lambda x: datetime.fromtimestamp(int(x))
-_decode_timedelta = lambda x: timedelta(seconds=int(x))
-_decode_None = lambda _: None
-_decode_decimal = lambda x: Decimal(str(x))
+_encode_datetime = lambda x: int(x.timestamp())  # noqa
+_encode_timedelta = lambda x: int(x.total_seconds())  # noqa
+_encode_enum = lambda x: x.value  # noqa
+_encode_None = lambda _: None  # noqa
+_encode_jsonable = lambda x: x.json()  # noqa
+_decode_datetime = lambda x: datetime.fromtimestamp(int(x))  # noqa
+_decode_timedelta = lambda x: timedelta(seconds=int(x))  # noqa
+_decode_None = lambda _: None  # noqa
+_decode_decimal = lambda x: Decimal(str(x))  # noqa
 
-_default_omitempty_tester = lambda x: not x
+_default_omitempty_tester = lambda x: not x  # noqa
 
 
 def _encode_dict(x):
