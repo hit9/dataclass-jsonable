@@ -318,7 +318,7 @@ class JSONAble:
             # So we try to evaluate the ForwardRef if we meet one.
             if sys.version_info.minor < 9:
                 globalns = sys.modules[cls.__module__].__dict__
-                return cls.get_encoder(t._evaluate(globalns, globalns)) # type: ignore
+                return cls.get_encoder(t._evaluate(globalns, globalns))  # type: ignore
             # after 3.9+ the globalns and locals respects to
             # ForwardRef.__forwared_module__'s globalns
             return cls.get_encoder(t._evaluate(None, None, frozenset()))  # type: ignore
@@ -408,7 +408,7 @@ class JSONAble:
             # https://bugs.python.org/issue41370
             if sys.version_info.minor < 9:
                 globalns = sys.modules[cls.__module__].__dict__
-                return cls.get_decoder(t._evaluate(globalns, globalns)) # type: ignore
+                return cls.get_decoder(t._evaluate(globalns, globalns))  # type: ignore
             return cls.get_decoder(t._evaluate(None, None, frozenset()))  # type: ignore
         raise NotImplementedError(f"get_decoder not support type {t}")
 
