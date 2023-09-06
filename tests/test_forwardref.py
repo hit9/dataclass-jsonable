@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -49,3 +50,40 @@ def test_forward_ref_generics():
     assert s.json() == {"data": {"x": 1}, "n": 2}
     s1 = S1.from_json({"data": {"x": 1}, "n": 2})
     assert s1 == s
+
+
+if sys.version_info.minor >= 9:
+    # list["int"] syntax is invalid before Python 3.9.
+
+    @dataclass
+    class S2(J):
+        x: list["int"]
+
+    def test_forward_ref_generics_py310_issue41370_1():
+        s = S2(x=[1, 2, 3])
+        assert s.json() == {"x": [1, 2, 3]}
+        d = S2.from_json({"x": [1, 2, 3]})
+        assert d == s
+
+    @dataclass
+    class S3(J):
+        x: list["Node"]
+
+    def test_forward_ref_generics_py310_issue41370_2():
+        s = S3(x=[Node(data=1)])
+        assert s.json() == {"x": [{"data": 1, "children": []}]}
+        d = S3.from_json({"x": [{"data": 1, "children": []}]})
+        assert d == s
+
+    @dataclass
+    class S4(J):
+        d: dict["str", list["Node"]]
+
+    def test_forward_ref_generics_py310_issue41370_3():
+        s = S4(d={"k1": [Node(data=2, children=[Node(data=3)])]})
+        assert s.json() == {
+            "d": {"k1": [{"data": 2, "children": [{"data": 3, "children": []}]}]}
+        }
+        d = s.json()
+        s1 = S4.from_json(d)
+        assert s1 == s

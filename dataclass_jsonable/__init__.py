@@ -11,6 +11,7 @@ Supported type annotations:
     JSONAble (nested)
 """
 import enum
+import sys
 from dataclasses import MISSING, dataclass, is_dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -21,6 +22,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    ForwardRef,
     List,
     Optional,
     Type,
@@ -287,7 +289,7 @@ class JSONAble:
         elif _is_generics(t) and _get_generics_origin(t) is dict:
             # Dict[K, E]
             args = _get_generics_args(t)
-            if args[0] is not str:
+            if args[0] is not str and args[0] != "str":
                 raise NotImplementedError("dict with non-str keys is not supported")
             # Dict[str, E]
             f = cls.get_encoder(args[1])
@@ -300,6 +302,26 @@ class JSONAble:
             # Optional[E]
             f = cls.get_encoder(args[0])
             return lambda x: None if x is None else f(x)
+        elif isinstance(t, str):
+            # t is a string, not a type.
+            # That is a ForwardRef, we use the namespaces dict (globals) from
+            # the class's module.
+            # NOTE: for py<3.9, the module keyword argument is not available.
+            if sys.version_info.minor < 9:
+                return cls.get_encoder(ForwardRef(t))
+            return cls.get_encoder(ForwardRef(t, module=cls.__module__))  # type: ignore
+        elif isinstance(t, ForwardRef):
+            # ForwardRef("sometype")
+            # function `get_type_hints` would evaluate the ForwardRef types to real
+            # python types. but there may be bugs in older python versions.
+            # e.g. Python 3.10  https://bugs.python.org/issue41370
+            # So we try to evaluate the ForwardRef if we meet one.
+            if sys.version_info.minor < 9:
+                globalns = sys.modules[cls.__module__].__dict__
+                return cls.get_encoder(t._evaluate(globalns, globalns))  # type: ignore
+            # after 3.9+ the globalns and locals respects to
+            # ForwardRef.__forwared_module__'s globalns
+            return cls.get_encoder(t._evaluate(None, None, frozenset()))  # type: ignore
         raise NotImplementedError(f"get_encoder not support type {t}")
 
     @classmethod
@@ -363,7 +385,7 @@ class JSONAble:
         elif _is_generics(t) and _get_generics_origin(t) is dict:
             # Dict[K, E]
             args = _get_generics_args(t)
-            if args[0] is not str:
+            if args[0] is not str and args[0] != "str":
                 raise NotImplementedError("dict with non-str keys is not supported")
             # Dict[str, E]
             f = cls.get_decoder(args[1])
@@ -376,6 +398,18 @@ class JSONAble:
             # Optional[E]
             f = cls.get_decoder(args[0])
             return lambda x: None if x is None else f(x)
+        elif isinstance(t, str):
+            # String, consider it a ForwardRef.
+            if sys.version_info.minor < 9:
+                return cls.get_decoder(ForwardRef(t))
+            return cls.get_decoder(ForwardRef(t, module=cls.__module__))  # type: ignore
+        elif isinstance(t, ForwardRef):
+            # ForwardRef("sometype")
+            # https://bugs.python.org/issue41370
+            if sys.version_info.minor < 9:
+                globalns = sys.modules[cls.__module__].__dict__
+                return cls.get_decoder(t._evaluate(globalns, globalns))  # type: ignore
+            return cls.get_decoder(t._evaluate(None, None, frozenset()))  # type: ignore
         raise NotImplementedError(f"get_decoder not support type {t}")
 
     @classmethod
