@@ -11,6 +11,7 @@ Supported type annotations:
     JSONAble (nested)
 """
 import enum
+import sys
 from dataclasses import MISSING, dataclass, is_dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -305,14 +306,22 @@ class JSONAble:
             # t is a string, not a type.
             # That is a ForwardRef, we use the namespaces dict (globals) from
             # the class's module.
-            return cls.get_encoder(ForwardRef(t, module=cls.__module__))
+            # NOTE: for py<3.9, the module keyword argument is not available.
+            if sys.version_info.minor < 9:
+                return cls.get_encoder(ForwardRef(t))
+            return cls.get_encoder(ForwardRef(t, module=cls.__module__))  # type: ignore
         elif isinstance(t, ForwardRef):
             # ForwardRef("sometype")
             # function `get_type_hints` would evaluate the ForwardRef types to real
             # python types. but there may be bugs in older python versions.
             # e.g. Python 3.10  https://bugs.python.org/issue41370
             # So we try to evaluate the ForwardRef if we meet one.
-            return cls.get_encoder(t._evaluate(None, None, frozenset()))
+            if sys.version_info.minor < 9:
+                globalns = sys.modules[cls.__module__].__dict__
+                return cls.get_encoder(t._evaluate(globalns, globalns)) # type: ignore
+            # after 3.9+ the globalns and locals respects to
+            # ForwardRef.__forwared_module__'s globalns
+            return cls.get_encoder(t._evaluate(None, None, frozenset()))  # type: ignore
         raise NotImplementedError(f"get_encoder not support type {t}")
 
     @classmethod
@@ -391,13 +400,16 @@ class JSONAble:
             return lambda x: None if x is None else f(x)
         elif isinstance(t, str):
             # String, consider it a ForwardRef.
-            return cls.get_decoder(ForwardRef(t, module=cls.__module__))
+            if sys.version_info.minor < 9:
+                return cls.get_decoder(ForwardRef(t))
+            return cls.get_decoder(ForwardRef(t, module=cls.__module__))  # type: ignore
         elif isinstance(t, ForwardRef):
             # ForwardRef("sometype")
             # https://bugs.python.org/issue41370
-            return cls.get_decoder(t._evaluate(None, None, frozenset()))
-        raise NotImplementedError(f"get_encoder not support type {t}")
-
+            if sys.version_info.minor < 9:
+                globalns = sys.modules[cls.__module__].__dict__
+                return cls.get_decoder(t._evaluate(globalns, globalns)) # type: ignore
+            return cls.get_decoder(t._evaluate(None, None, frozenset()))  # type: ignore
         raise NotImplementedError(f"get_decoder not support type {t}")
 
     @classmethod
