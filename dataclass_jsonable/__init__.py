@@ -14,7 +14,7 @@ Supported type annotations:
 import enum
 import sys
 from dataclasses import MISSING, dataclass, is_dataclass
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
