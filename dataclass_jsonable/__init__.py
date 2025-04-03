@@ -193,7 +193,7 @@ def zero(t) -> V:
         return t.from_json({})  # type: ignore
     if is_dataclass(t):
         # dataclasses
-        return t()
+        return t()  # type: ignore
     raise NotImplementedError(f"not supported type {t}")
 
 
