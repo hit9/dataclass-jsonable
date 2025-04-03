@@ -5,15 +5,16 @@ Requires: Python >= 3.7
 
 Supported type annotations:
 
-    bool, int, float, str, Decimal, datetime, timedelta, Enum, IntEnum
+    bool, int, float, str, Decimal, datetime, date, timedelta, Enum, IntEnum
     Any, Optional[X]
     List[X], Tuple[X, ...], Set[X], Dict[str, X],
     JSONAble (nested)
 """
+
 import enum
 import sys
 from dataclasses import MISSING, dataclass, is_dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from decimal import Decimal
 from enum import Enum
 from types import MappingProxyType
@@ -165,6 +166,8 @@ def zero(t) -> V:
         return None
     if t is datetime:
         return datetime.fromtimestamp(0)
+    if t is date:
+        return date.fromtimestamp(0)
     if t is timedelta:
         return timedelta(seconds=0)
     if t is Any:
@@ -254,6 +257,8 @@ class JSONAble:
             return str
         elif t is datetime:
             return _encode_datetime
+        elif t is date:
+            return _encode_date
         elif t is timedelta:
             return _encode_timedelta
         elif isinstance(t, type) and issubclass(t, Enum):
@@ -345,6 +350,8 @@ class JSONAble:
             return _decode_decimal
         elif t is datetime:
             return _decode_datetime
+        elif t is date:
+            return _decode_date
         elif t is timedelta:
             return _decode_timedelta
         elif t is Any:
@@ -585,11 +592,13 @@ J = JSONAble  # short alias
 # Makes some encoder/decoder function be static.
 
 _encode_datetime = lambda x: int(x.timestamp())  # noqa
+_encode_date = lambda x: x.strftime("%Y-%m-%d")  # noqa
 _encode_timedelta = lambda x: int(x.total_seconds())  # noqa
 _encode_enum = lambda x: x.value  # noqa
 _encode_None = lambda _: None  # noqa
 _encode_jsonable = lambda x: x.json()  # noqa
 _decode_datetime = lambda x: datetime.fromtimestamp(int(x))  # noqa
+_decode_date = lambda x: datetime.strptime(x, "%Y-%m-%d").date()  # noqa
 _decode_timedelta = lambda x: timedelta(seconds=int(x))  # noqa
 _decode_None = lambda _: None  # noqa
 _decode_decimal = lambda x: Decimal(str(x))  # noqa

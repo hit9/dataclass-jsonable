@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, Dict, List
 
 from dataclass_jsonable import J, json_options
@@ -55,11 +55,23 @@ class Record(J):
             )
         },
     )
+    created_at_date: date = field(default_factory=date.today)
 
 
 def test_option_endecoder_datetime():
-    r = Record(created_at=datetime(2022, 1, 1, 1, 1, 1))
-    x = {"created_at": "2022-01-01T01:01:01"}
+    r = Record(
+        created_at=datetime(2022, 1, 1, 1, 1, 1), created_at_date=date(2022, 1, 1)
+    )
+    x = {"created_at": "2022-01-01T01:01:01", "created_at_date": "2022-01-01"}
+    assert r.json() == x
+    assert Record.from_json(x) == r
+
+
+def test_option_endecoder_date():
+    r = Record(
+        created_at=datetime(2022, 1, 1, 1, 1, 1), created_at_date=date(2022, 3, 31)
+    )
+    x = {"created_at": "2022-01-01T01:01:01", "created_at_date": "2022-03-31"}
     assert r.json() == x
     assert Record.from_json(x) == r
 
